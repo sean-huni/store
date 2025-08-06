@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 4-1-add-timestamp-columns
+      author: Sean Huni
+      changes:
+        - addColumn:
+            tableName: customer
+            columns:
+              - column:
+                  name: created
+                  type: timestamp with time zone
+#                  defaultValueComputed: CURRENT_TIMESTAMP
+#                  constraints:
+#                    nullable: false
+              - column:
+                  name: updated
+                  type: timestamp with time zone
+#                  defaultValueComputed: CURRENT_TIMESTAMP
+#                  constraints:
+#                    nullable: false
+        - addColumn:
+            tableName: "order"
+            columns:
+              - column:
+                  name: created
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+#                  constraints:
+#                    nullable: false
+              - column:
+                  name: updated
+                  type: timestamp with time zone
+#                  defaultValueComputed: CURRENT_TIMESTAMP
+#                  constraints:
+#                    nullable: false
+        

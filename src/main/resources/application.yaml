@@ -1,8 +1,4 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5433/store
-    username: admin
-    password: admin
   jpa:
     hibernate:
       ddl-auto: validate
@@ -13,3 +9,16 @@ spring:
         default_batch_fetch_size: 10
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+
+---
+global:
+  search:
+    sort-field: id
+    limit: 30
+    sort-direction: asc
+
+customer:
+  search:
+    sort-field: name
+    limit: 20
+    sort-direction: asc

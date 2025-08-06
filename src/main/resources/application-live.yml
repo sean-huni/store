@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
+    username: ${user}
+    password: ${pass}
+  application:
+    name: store
+
+---
+application:
+  security:
+    jwt:
+      secret-key: ${SECRET_KEY}
+      expiration: ${JWT_EXPIRE}
+      refresh-token:
+        expiration: ${REFR_TKN_EXPIRE}

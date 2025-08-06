@@ -1,0 +1,126 @@
+services:
+  # 1. JaCoCo + Build (runs Gradle test & coverage)
+  jacoco:
+    image: gradle:8-jdk17
+    container_name: jacoco-runner
+    volumes:
+      - ../..:/app
+      - ~/.gradle:/home/gradle/.gradle
+      - jacoco_reports:/app/build/reports/jacoco
+      - build_cache:/home/gradle/.gradle
+    working_dir: /app
+    command: >
+      bash -c "
+        chmod +x ./gradlew &&
+        ./gradlew clean test jacocoTestReport jacocoTestCoverageVerification sonarqube -I jacoco.gradle --info
+      "
+    environment:
+      - GRADLE_USER_HOME=/home/gradle/.gradle
+      - SONAR_HOST_URL=http://sonarqube:9000
+      - SONAR_LOGIN=${SONAR_TOKEN:-your-default-token}
+    networks:
+      - ci-network
+    depends_on:
+      - sonarqube
+    # Ensure Gradle output is accessible
+
+  # 2. SonarQube Scanner
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli
+#    platform: linux/arm64  # Use ARM64 if available
+    container_name: sonar-scanner
+    depends_on:
+      - sonarqube
+      - jacoco
+    volumes:
+      - ../..:/usr/src
+      - jacoco_reports:/usr/src/build/reports/jacoco
+    working_dir: /usr/src
+    environment:
+      - SONAR_HOST_URL=http://sonarqube:9000
+      - SONAR_LOGIN=${SONAR_TOKEN:-your-default-token}  # Use env var
+    # Skip running sonar-scanner as it's already included in qualityCheck
+    command: echo "Skipping sonar-scanner as it's already included in qualityCheck task"
+    networks:
+      - ci-network
+
+  # 3. SonarQube Server
+  sonarqube:
+    image: sonarqube:latest # Pulls the latest stable SonarQube image
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true # For development purposes
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+      # Add environment variables for SonarQube quality gates
+      - SONAR_QUALITYGATE_WAIT=true
+      - SONAR_QUALITYGATE_TIMEOUT=300
+    depends_on:
+      - db
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - jacoco_reports:/opt/sonarqube/jacoco-reports
+    networks:
+      - ci-network
+    restart: unless-stopped
+
+  # 4. PostgreSQL for SonarQube
+  db:
+    image: postgres:alpine # PostgreSQL image for storing SonarQube data
+    container_name: sonarqube_db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonarqube
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - ci-network
+    restart: unless-stopped
+
+  # 5. Trivy - Dependency & Container Vulnerability Scanner
+  trivy:
+    image: aquasec/trivy:latest
+    command: fs --security-checks vuln --format table /app
+    volumes:
+      - ../..:/app
+    networks:
+      - ci-network
+
+  # 6. Semgrep - SAST (Static Analysis)
+  semgrep:
+    image: returntocorp/semgrep:latest
+    command: semgrep scan --config=auto --error --json --output=/app/reports/semgrep.json
+    volumes:
+      - ../..:/app
+      - ./reports:/app/reports
+    working_dir: /app
+    networks:
+      - ci-network
+
+  # 7. OWASP ZAP (DAST) - Optional: Run after app starts
+  zap:
+    image: zaproxy/zap-stable
+    command: zap-baseline.py -t http://your-app:8080 -f html -o /zap/report.html
+    volumes:
+      - ./reports:/zap/report
+    networks:
+      - ci-network
+    # depends_on: your-app (if testing live app)
+
+volumes:
+  postgresql_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  jacoco_reports:
+  build_cache:
+
+networks:
+  ci-network:
+    driver: bridge

@@ -1,0 +1,87 @@
+// Apply JaCoCo plugin if not already applied
+if (!project.plugins.hasPlugin('jacoco')) {
+    apply plugin: 'jacoco'
+}
+
+// Define exclusions in one place to maintain consistency
+def exclusions = [
+    '**/*Test*',
+    '@Generated'
+]
+
+// Configure JaCoCo
+jacoco {
+    toolVersion = "0.8.8" // Use a stable version compatible with Gradle
+}
+
+// Configure JaCoCo test report
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Configure JaCoCo test coverage verification
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+            excludes = exclusions
+        }
+
+        rule {
+            enabled = true
+            element = 'CLASS'
+            includes = ['com.example.store.*']
+            excludes = exclusions
+
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+
+            limit {
+                counter = 'METHOD'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+}
+
+// Force verification checks
+check.dependsOn jacocoTestCoverageVerification
+
+// Ensure reports are generated before SonarQube analysis
+tasks.sonarqube {
+    dependsOn jacocoTestReport
+}
+
+// Make test task depend on verification
+test.finalizedBy jacocoTestCoverageVerification
+
+// Add a task to run all quality checks
+tasks.register('qualityCheck') {
+    dependsOn test
+    dependsOn jacocoTestCoverageVerification
+    dependsOn sonarqube
+
+    jacocoTestCoverageVerification.mustRunAfter test
+}
+
+tasks.sonarqube {
+    dependsOn jacocoTestCoverageVerification
+}
