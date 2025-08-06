@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3-1-product-order-table
+      author: Sean Huni
+      changes:
+        - createTable:
+            tableName: product_order
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: decimal(19,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated
+                  type: timestamp with time zone
+#                  defaultValueComputed: CURRENT_TIMESTAMP
+#                  constraints:
+#                    nullable: false
+
+  - changeSet:
+      id: 3-2-add-product-order-foreign-keys
+      author: Sean Huni
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: product_order
+            baseColumnNames: order_id
+            referencedTableName: order
+            referencedColumnNames: id
+            constraintName: fk_product_order_order_id
+            onDelete: CASCADE
+            onUpdate: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: product_order
+            baseColumnNames: product_id
+            referencedTableName: product
+            referencedColumnNames: id
+            constraintName: fk_product_order_product_id
+            onDelete: RESTRICT
+            onUpdate: CASCADE
+
+  - changeSet:
+      id: 3-3-add-product-order-unique-constraint
+      author: Sean Huni
+      changes:
+        - addUniqueConstraint:
+            tableName: product_order
+            columnNames: order_id, product_id
+            constraintName: uk_product_order_order_id_product_id
+
+  - changeSet:
+      id: 3-4-product-order-indexes
+      author: Sean Huni
+      changes:
+        - createIndex:
+            tableName: product_order
+            indexName: idx_product_order_order_id
+            columns:
+              - column:
+                  name: order_id
+        - createIndex:
+            tableName: product_order
+            indexName: idx_product_order_product_id
+            columns:
+              - column:
+                  name: product_id
+        - createIndex:
+            tableName: product_order
+            indexName: idx_product_order_added
+            columns:
+              - column:
+                  name: created

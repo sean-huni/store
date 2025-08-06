@@ -1,33 +1,68 @@
 package com.example.store.controller;
 
+import com.example.store.component.CustomerSearchProps;
 import com.example.store.dto.CustomerDTO;
-import com.example.store.entity.Customer;
-import com.example.store.mapper.CustomerMapper;
-import com.example.store.repository.CustomerRepository;
-
+import com.example.store.dto.SortEnumDTO;
+import com.example.store.service.store.CustomerService;
+import com.example.store.util.PageableBuilder;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/customer")
-@RequiredArgsConstructor
-public class CustomerController {
+import static java.util.Objects.isNull;
 
-    private final CustomerRepository customerRepository;
-    private final CustomerMapper customerMapper;
+@RestController
+@RequestMapping("/customers")
+@RequiredArgsConstructor
+@Validated
+public class CustomerController {
+    private final CustomerService customerService;
+    private final CustomerSearchProps customerSearchProps;
+    private final PageableBuilder pageableBuilder;
 
     @GetMapping
-    public List<CustomerDTO> getAllCustomers() {
-        return customerMapper.customersToCustomerDTOs(customerRepository.findAll());
+
+    public List<CustomerDTO> findCustomers(
+            final @RequestParam(required = false) String name,
+            final @RequestParam(required = false) @Min(value = 0, message = "global.400.006") Integer page,
+            final @RequestParam(required = false) @Min(value = 5, message = "global.400.005") Integer limit,
+            final @RequestParam(required = false) String sortBy,
+            final @RequestParam(required = false) SortEnumDTO sortDir) {
+
+        final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir, customerSearchProps.getLimit(),
+                customerSearchProps.getSortField(),
+                customerSearchProps.getDirection()
+        );
+
+        if (isNull(name)) {
+            return customerService.findAllCustomers(pageable);
+        } else {
+            return customerService.findCustomersNameContainingSubString(name, pageable);
+        }
+    }
+
+    @GetMapping("{id}")
+    public CustomerDTO findCustomerById(@PathVariable("id") @Positive(message = "global.400.003") Long id) {
+        return customerService.findCustomerById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CustomerDTO createCustomer(@RequestBody Customer customer) {
-        return customerMapper.customerToCustomerDTO(customerRepository.save(customer));
+    public CustomerDTO createCustomer(final @Valid @RequestBody CustomerDTO customer) {
+        return customerService.createCustomer(customer);
     }
 }

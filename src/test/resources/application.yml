@@ -1,0 +1,17 @@
+
+
+spring:
+  docker:
+    compose:
+      file: src/test/resources/dc/test-tools.yml
+  application:
+    name: store-test
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: public
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database: postgresql
+    show-sql: false

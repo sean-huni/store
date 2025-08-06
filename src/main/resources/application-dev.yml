@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/store
+    username: admin
+    password: admin
+  application:
+    name: store-dev
+
+---
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      expiration: ${JWT_EXPIRATION:43200000} # 1/2 day
+      refresh-token:
+        expiration: ${JWT_REFRESH_EXPIRATION:259200000}  # 3 days
+      token-prefix: "Bearer "
+
