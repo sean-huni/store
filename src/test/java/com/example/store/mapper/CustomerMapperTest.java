@@ -15,7 +15,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("unit")
 @DisplayName("Unit Test - CustomerMapper")
@@ -87,6 +90,36 @@ class CustomerMapperTest {
             assertEquals(customer.getName(), dto.getName());
             assertNull(dto.getOrders());
         }
+
+        @Test
+        @DisplayName("Then handle null customer")
+        void thenHandleNullCustomer() {
+            // When
+            CustomerDTO dto = mapper.toCustomerDTO(null);
+
+            // Then
+            assertNull(dto);
+        }
+
+        @Test
+        @DisplayName("Then handle empty orders set")
+        void thenHandleEmptyOrdersSet() {
+            // Given
+            Customer customer = new Customer();
+            customer.setId(1L);
+            customer.setName("Test Customer");
+            customer.setOrders(new HashSet<>());
+
+            // When
+            CustomerDTO dto = mapper.toCustomerDTO(customer);
+
+            // Then
+            assertNotNull(dto);
+            assertEquals(customer.getId(), dto.getId());
+            assertEquals(customer.getName(), dto.getName());
+            assertNotNull(dto.getOrders());
+            assertTrue(dto.getOrders().isEmpty());
+        }
     }
 
     @Nested
@@ -123,6 +156,16 @@ class CustomerMapperTest {
             // Orders should be ignored in this mapping
             assertNotNull(customer.getOrders());
             assertTrue(customer.getOrders().isEmpty());
+        }
+
+        @Test
+        @DisplayName("Then handle null customerDTO")
+        void thenHandleNullCustomerDTO() {
+            // When
+            Customer customer = mapper.toCustomer(null);
+
+            // Then
+            assertNull(customer);
         }
     }
 
@@ -167,6 +210,16 @@ class CustomerMapperTest {
             assertNotNull(dtos);
             assertTrue(dtos.isEmpty());
         }
+
+        @Test
+        @DisplayName("Then handle null list")
+        void thenHandleNullList() {
+            // When
+            List<CustomerDTO> dtos = mapper.toCustomerDTOs(null);
+
+            // Then
+            assertNull(dtos);
+        }
     }
 
     @Nested
@@ -205,6 +258,20 @@ class CustomerMapperTest {
 
             // Then
             assertNull(orderIds);
+        }
+
+        @Test
+        @DisplayName("Then mapOrdersToIds handles empty set")
+        void thenMapOrdersToIdsHandlesEmptySet() {
+            // Given
+            Set<Order> orders = new HashSet<>();
+
+            // When
+            Set<Long> orderIds = mapper.mapOrdersToIds(orders);
+
+            // Then
+            assertNotNull(orderIds);
+            assertTrue(orderIds.isEmpty());
         }
     }
 }

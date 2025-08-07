@@ -2,8 +2,8 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.OrderDTO;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
@@ -31,7 +31,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

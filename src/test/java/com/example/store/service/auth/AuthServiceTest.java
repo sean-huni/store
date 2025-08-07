@@ -1,18 +1,18 @@
 package com.example.store.service.auth;
 
 import com.example.store.config.security.JwtProperties;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import com.example.store.dto.auth.RefreshTokenReqDTO;
-import com.example.store.dto.auth.RegReqDTO;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
+import com.example.store.dto.auth.resp.RegReqDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -96,8 +96,8 @@ class AuthServiceTest {
                 .credentialsNonExpired(true)
                 .build();
 
-        // Setup JWT properties
-        when(jwtProperties.getExpiration()).thenReturn(expiration);
+        // Setup JWT properties with lenient stubbing to avoid unnecessary stubbing warnings
+        lenient().when(jwtProperties.getExpiration()).thenReturn(expiration);
     }
 
     @Test

@@ -2,8 +2,8 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.CustomerDTO;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.User;

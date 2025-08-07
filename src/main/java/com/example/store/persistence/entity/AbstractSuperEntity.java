@@ -25,7 +25,9 @@ public class AbstractSuperEntity {
 
     @PrePersist
     public void prePersist() {
-        created = ZonedDateTime.now();
+        final ZonedDateTime now = ZonedDateTime.now();
+        created = now;
+        updated = now;
     }
 
     @PreUpdate

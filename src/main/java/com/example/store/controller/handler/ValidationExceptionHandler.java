@@ -25,6 +25,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.example.store.constant.AppConstant.GLOBAL_ERROR_MSG_PREFIX;
+
 
 @Log4j2
 @RestControllerAdvice
@@ -33,6 +35,7 @@ public class ValidationExceptionHandler {
     private static final Locale locale = Locale.getDefault();
     private final MessageSource messageSource;
     private static final Pattern QUOTED_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"");
+
 
     public ValidationExceptionHandler(final MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -121,7 +124,7 @@ public class ValidationExceptionHandler {
 
             // Resolve the message using MessageSource if it's a global message code
             String message = violation.getMessage();
-            if (message != null && message.startsWith("global.400")) {
+            if (message != null && message.startsWith(GLOBAL_ERROR_MSG_PREFIX)) {
                 violationDTO.setErrMsg(messageSource.getMessage(message, null, message, locale));
             } else {
                 violationDTO.setErrMsg(message);

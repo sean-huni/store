@@ -2,9 +2,7 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.ProductDTO;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import org.springframework.context.annotation.Import;
+import com.example.store.dto.auth.resp.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Product;
 import com.example.store.persistence.entity.User;
@@ -22,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -72,7 +71,7 @@ class ProductControllerIntTest {
     private Gson gson;
     
     // Custom Gson instance that preserves camelCase field names
-    private Gson customGson = new com.google.gson.GsonBuilder()
+    private final Gson customGson = new com.google.gson.GsonBuilder()
             .setFieldNamingPolicy(com.google.gson.FieldNamingPolicy.IDENTITY)
             .create();
 

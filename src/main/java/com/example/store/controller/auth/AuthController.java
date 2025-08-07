@@ -1,13 +1,12 @@
 package com.example.store.controller.auth;
 
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import com.example.store.dto.auth.RefreshTokenReqDTO;
-import com.example.store.dto.auth.RegReqDTO;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
+import com.example.store.dto.auth.resp.RegReqDTO;
 import com.example.store.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
