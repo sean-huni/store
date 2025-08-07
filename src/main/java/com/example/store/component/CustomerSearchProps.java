@@ -2,7 +2,6 @@ package com.example.store.component;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 @Component

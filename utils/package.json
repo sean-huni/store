@@ -7,6 +7,6 @@
     "generate": "node generateData.js"
   },
   "dependencies": {
-    "@faker-js/faker": "^7.0.0"
+    "@faker-js/faker": "^7.6.0"
   }
 }

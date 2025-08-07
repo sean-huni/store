@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17.5-alpine3.22
+    container_name: store
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=store
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

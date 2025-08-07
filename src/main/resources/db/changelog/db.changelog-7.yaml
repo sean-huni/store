@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 7-1-remove-default-values-from-timestamp-columns
+      author: developer
+      comment: Removing default values from created and updated columns to allow JPA @PrePersist and @PreUpdate annotations to function
+      changes:
+        - dropDefaultValue:
+            tableName: product
+            columnName: created
+        - dropDefaultValue:
+            tableName: product
+            columnName: updated
+        - dropDefaultValue:
+            tableName: product_order
+            columnName: created
+        - dropDefaultValue:
+            tableName: product_order
+            columnName: updated
+        - dropDefaultValue:
+            tableName: customer
+            columnName: created
+        - dropDefaultValue:
+            tableName: customer
+            columnName: updated
+        - dropDefaultValue:
+            tableName: "order"
+            columnName: created
+        - dropDefaultValue:
+            tableName: "order"
+            columnName: updated
+        - dropDefaultValue:
+            tableName: user
+            columnName: created
+        - dropDefaultValue:
+            tableName: user
+            columnName: updated

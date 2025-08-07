@@ -1,10 +1,10 @@
 package com.example.store.service.auth;
 
 import com.example.store.config.security.JwtProperties;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import com.example.store.dto.auth.RefreshTokenReqDTO;
-import com.example.store.dto.auth.RegReqDTO;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
+import com.example.store.dto.auth.resp.RegReqDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
 import com.example.store.persistence.entity.User;
@@ -112,7 +112,10 @@ public class AuthService {
             }
             
             User user = userRepo.findByEmail(userEmail)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    .orElseThrow(() -> {
+                        log.error("Error refreshing token: User not found");
+                        return new UsernameNotFoundException("User not found");
+                    });
             
             if (!jwtService.isTokenValid(refreshToken, user)) {
                 throw new InvalidRefreshTokenException("Invalid or expired refresh token");
@@ -128,7 +131,14 @@ public class AuthService {
                     .tokenType(TOKEN_TYPE)
                     .expiresIn(jwtProperties.getExpiration())
                     .build();
-            
+
+        } catch (UsernameNotFoundException e) {
+            // Rethrow UsernameNotFoundException to maintain the expected exception type
+            throw e;
+        } catch (InvalidRefreshTokenException e) {
+            // Rethrow InvalidRefreshTokenException to maintain the original error message
+            log.error("Error refreshing token: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("Error refreshing token: {}", e.getMessage());
             throw new InvalidRefreshTokenException("Invalid refresh token");

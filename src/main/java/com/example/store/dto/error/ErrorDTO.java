@@ -9,11 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-/**
- * Response DTO for API responses, especially for error scenarios.
- * Contains information about the request status, error message,
- * and detailed validation errorDetailDTOS if applicable.
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -3,8 +3,8 @@ package com.example.store.service.auth;
 import com.example.store.config.security.JwtProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -20,7 +20,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
@@ -51,8 +54,9 @@ class JwtServiceTest {
         
         // Setup JWT properties
         when(jwtProperties.getSecretKey()).thenReturn(secretKey);
-        when(jwtProperties.getExpiration()).thenReturn(expiration);
-        when(jwtProperties.getRefreshExpiration()).thenReturn(refreshExpiration);
+        // Use lenient stubbing for expiration and refresh expiration as they're not used in all tests
+        lenient().when(jwtProperties.getExpiration()).thenReturn(expiration);
+        lenient().when(jwtProperties.getRefreshExpiration()).thenReturn(refreshExpiration);
     }
 
     @Test
@@ -154,5 +158,92 @@ class JwtServiceTest {
         long expectedExpiration = System.currentTimeMillis() + this.expiration;
         // Allow for a 10-second margin of error
         assertTrue(Math.abs(expectedExpiration - expiration.getTime()) < 10000);
+    }
+
+    @Test
+    @DisplayName("Should handle malformed tokens")
+    void shouldHandleMalformedTokens() {
+        // Given
+        String malformedToken = "not.a.valid.jwt.token";
+
+        // When/Then
+        // Expect an exception when extracting username from a malformed token
+        assertThrows(Exception.class, () -> jwtService.extractUsername(malformedToken));
+
+        // This test verifies that the exception is thrown, which is what we want
+        // The code coverage will show that the exception path is exercised
+    }
+
+    @Test
+    @DisplayName("Should handle tokens with invalid signatures")
+    void shouldHandleTokensWithInvalidSignatures() {
+        // Given
+        // Generate a token with the correct user but tamper with it
+        String token = jwtService.generateAccessToken(userDetails);
+        String tamperedToken = token.substring(0, token.lastIndexOf('.') + 1) + "invalid_signature";
+
+        // When/Then
+        // Expect an exception when extracting username from a token with invalid signature
+        assertThrows(Exception.class, () -> jwtService.extractUsername(tamperedToken));
+
+        // This test verifies that the exception is thrown, which is what we want
+        // The code coverage will show that the exception path is exercised
+    }
+
+    @Test
+    @DisplayName("Should handle extracting missing claims")
+    void shouldHandleExtractingMissingClaims() {
+        // Given
+        String token = jwtService.generateRefreshToken(userDetails);
+
+        // When/Then
+        // The refresh token doesn't have authorities, so this should return null
+        assertNull(jwtService.extractClaim(token, claims -> claims.get("non_existent_claim", String.class)));
+    }
+
+    @Test
+    @DisplayName("Should handle ExpiredJwtException in isTokenValid method")
+    void shouldHandleExpiredJwtExceptionInIsTokenValid() {
+        // Given
+        // Create a token that's already expired
+        when(jwtProperties.getExpiration()).thenReturn(1L); // 1 millisecond
+        String expiredToken = jwtService.generateAccessToken(userDetails);
+
+        // Wait to ensure token is expired
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When/Then
+        // This should trigger the ExpiredJwtException catch block in isTokenValid
+        assertFalse(jwtService.isTokenValid(expiredToken, userDetails));
+    }
+
+    @Test
+    @DisplayName("Should handle ExpiredJwtException in isTokenExpired method")
+    void shouldHandleExpiredJwtExceptionInIsTokenExpired() {
+        // Given
+        // Create a token that's already expired
+        when(jwtProperties.getExpiration()).thenReturn(1L); // 1 millisecond
+        String expiredToken = jwtService.generateAccessToken(userDetails);
+
+        // Wait to ensure token is expired
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When/Then
+        // This should trigger the ExpiredJwtException catch block in isTokenExpired
+        // We can't call isTokenExpired directly as it's private, but we can call isTokenValid
+        // which will call isTokenExpired internally
+        assertFalse(jwtService.isTokenValid(expiredToken, userDetails));
+
+        // To ensure we're testing the specific branch in isTokenExpired, we'll also
+        // try to extract the expiration date, which should throw an exception
+        assertThrows(Exception.class, () -> jwtService.extractClaim(expiredToken, claims -> claims.getExpiration()));
     }
 }

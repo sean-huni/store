@@ -94,10 +94,12 @@ There's no CI pipeline associated with this project, but in reality there would 
 expect that pipeline to verify before allowing your code to be promoted
 Feel free to refactor the codebase if necessary. Bad choices were deliberately made when creating this project.
 
-# Done
-1. OpenAPI
-2. Security
-3. Jacoco
+# Additional Tasks
+
+1. OpenAPI - Done
+2. Security - Done
+3. Jacoco - Done
+4. Faker Data - Done
 
 # Decision Record
 
@@ -107,9 +109,31 @@ Feel free to refactor the codebase if necessary. Bad choices were deliberately m
 # Executing the DevOps pipeline
 
 - `docker compose -f src/test/resources/dc/test-tools.yml down -v --remove-orphans && docker compose -f src/test/resources/dc/test-tools.yml up -d`
--
-Execute sonarqube analysis with the following command:
+- Execute sonarqube analysis with the following command:
 `./gradlew sonar -Dsonar.projectKey=Equal-Experts -Dsonar.projectName='Equal-Experts' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_eafffb588bf1d4d9b2c5c6f350254a70bb11793f`
-Sonarque analysis can be found at: [SonarQube](http://localhost:9000)
+- Sonarque analysis can be found at: [SonarQube](http://localhost:9000)
+- Take note of the Generated Token
 
-- Generated Token: sqp_d3d13da62c783c64c199d588a0756f585c2698aa
+# Interacting with API
+
+- To execute the Store App:
+  `./gradlew bootRun --args="--spring.profiles.active=dev --DB_HOST=localhost:5433 --DB_NAME=store --DB_PASS=postgres --DB_USER=postgres"`
+- OpenAPI Docs: http://localhost:8080/v3/api-docs
+- OpenAPI URI: http://localhost:8080/swagger-ui/index.html
+- Curl Request:
+  `curl -X 'POST' \
+    'http://localhost:8080/auth/register' \
+    -H 'accept: */*' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "firstName": "Alice",
+    "lastName": "Wonderland",
+    "email": "alice@email.com",
+    "password": "password"
+  }'`
+- Curl Request (+ JWT Token)
+  `curl -X 'GET' \
+    'http://localhost:8080/products?sortDir=asc' \
+    -H 'accept: */*' \
+    -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJhdXRob3JpdGllcyI6WyJVU0VSIl0sInN1YiI6InNlYW4ya2F5QGdtYWlsLmNvbSIsImlhdCI6MTc1NDU3Mjk0NCwiZXhwIjoxNzU0NjE2MTQ0fQ.6mHJRo1nMNUmR559DDjW1GCZxodP_S_XLK-feDmKZwUFYmgiJPTfi_xA7KDK5EnH'`
+- 
