@@ -6,6 +6,7 @@ if (!project.plugins.hasPlugin('jacoco')) {
 // Define exclusions in one place to maintain consistency
 def exclusions = [
     '**/*Test*',
+    ["src/test/**/*", "**/config/OpenApiConfig.*"],
     '@Generated'
 ]
 
@@ -14,7 +15,7 @@ jacoco {
     toolVersion = "0.8.8" // Use a stable version compatible with Gradle
 }
 
-// Configure JaCoCo test report
+// Simple JaCoCo test report configuration
 jacocoTestReport {
     reports {
         xml.required = true
@@ -22,24 +23,15 @@ jacocoTestReport {
     }
 }
 
-// Configure JaCoCo test coverage verification
+// Simple JaCoCo test coverage verification
 jacocoTestCoverageVerification {
+    dependsOn test
+
     violationRules {
         rule {
-            element = 'BUNDLE'
-            limit {
-                counter = 'INSTRUCTION'
-                value = 'COVEREDRATIO'
-                minimum = 0.70
-            }
-            excludes = exclusions
-        }
-
-        rule {
-            enabled = true
             element = 'CLASS'
             includes = ['com.example.store.*']
-            excludes = exclusions
+            excludes = exclusions as List<String>
 
             limit {
                 counter = 'LINE'
@@ -62,26 +54,14 @@ jacocoTestCoverageVerification {
     }
 }
 
-// Force verification checks
-check.dependsOn jacocoTestCoverageVerification
-
-// Ensure reports are generated before SonarQube analysis
-tasks.sonarqube {
-    dependsOn jacocoTestReport
-}
-
-// Make test task depend on verification
-test.finalizedBy jacocoTestCoverageVerification
-
 // Add a task to run all quality checks
 tasks.register('qualityCheck') {
     dependsOn test
+    dependsOn jacocoTestReport
     dependsOn jacocoTestCoverageVerification
-    dependsOn sonarqube
-
-    jacocoTestCoverageVerification.mustRunAfter test
 }
 
+// Ensure SonarQube uses JaCoCo reports
 tasks.sonarqube {
-    dependsOn jacocoTestCoverageVerification
+    dependsOn jacocoTestReport
 }

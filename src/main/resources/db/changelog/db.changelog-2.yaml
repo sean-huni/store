@@ -1,7 +1,32 @@
 databaseChangeLog:
   - changeSet:
-      id: 2-data
-      author: developer@securitease.com
+      id: 21-product-table
+      author: Sean Huni
       changes:
-        - sqlFile:
-            path: db/changelog/data.sql
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false

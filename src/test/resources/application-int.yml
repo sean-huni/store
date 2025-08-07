@@ -2,6 +2,9 @@ spring:
   application:
     name: store-test
   datasource:
+    url: jdbc:postgresql://localhost:5435/store_int_db
+    username: postgres_int
+    password: postgres_int
     hikari:
       driver-class-name: org.postgresql.Driver
       maximum-pool-size: 60

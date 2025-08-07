@@ -1,19 +1,23 @@
 package com.example.store.controller.auth;
 
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import com.example.store.dto.auth.RefreshTokenReqDTO;
-import com.example.store.dto.auth.RegReqDTO;
+import com.example.store.config.security.JwtProperties;
+import com.example.store.dto.auth.req.AuthRespDTO;
+import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
+import com.example.store.dto.auth.resp.RegReqDTO;
 import com.example.store.service.auth.AuthService;
+import com.example.store.service.auth.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Tag("unit")
 @WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("AuthController Tests")
 class AuthControllerTest {
 
@@ -35,6 +40,15 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private UserDetailsService userDetailsService;
+
+    @MockBean
+    private JwtProperties jwtProperties;
 
     private AuthRespDTO authRespDTO;
 

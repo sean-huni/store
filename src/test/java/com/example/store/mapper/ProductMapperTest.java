@@ -18,7 +18,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("unit")
 @DisplayName("Unit Test - ProductMapper")
@@ -107,6 +110,57 @@ class ProductMapperTest {
             assertNotNull(dto.getOrderIds());
             assertTrue(dto.getOrderIds().isEmpty());
         }
+
+        @Test
+        @DisplayName("Then handle null product")
+        void thenHandleNullProduct() {
+            // When
+            ProductDTO dto = mapper.toProductDTO(null);
+
+            // Then
+            assertNull(dto);
+        }
+
+        @Test
+        @DisplayName("Then handle empty orders list")
+        void thenHandleEmptyOrdersList() {
+            // Given
+            Product product = new Product();
+            product.setId(1L);
+            product.setDescription("Test Product");
+            product.setSku(UUID.randomUUID());
+            product.setOrders(new ArrayList<>());
+
+            // When
+            ProductDTO dto = mapper.toProductDTO(product);
+
+            // Then
+            assertNotNull(dto);
+            assertEquals(product.getId(), dto.getId());
+            assertEquals(product.getDescription(), dto.getDescription());
+            assertEquals(product.getSku(), dto.getSku());
+            assertNotNull(dto.getOrderIds());
+            assertTrue(dto.getOrderIds().isEmpty());
+        }
+
+        @Test
+        @DisplayName("Then handle null SKU")
+        void thenHandleNullSku() {
+            // Given
+            Product product = new Product();
+            product.setId(1L);
+            product.setDescription("Test Product");
+            product.setSku(null);
+
+            // When
+            ProductDTO dto = mapper.toProductDTO(product);
+
+            // Then
+            assertNotNull(dto);
+            assertEquals(product.getId(), dto.getId());
+            assertEquals(product.getDescription(), dto.getDescription());
+            assertNull(dto.getSku());
+        }
     }
 
     @Nested
@@ -146,6 +200,35 @@ class ProductMapperTest {
             // Orders should be ignored in this mapping
             assertNotNull(product.getOrders());
             assertTrue(product.getOrders().isEmpty());
+        }
+
+        @Test
+        @DisplayName("Then handle null productDTO")
+        void thenHandleNullProductDTO() {
+            // When
+            Product product = mapper.toProduct(null);
+
+            // Then
+            assertNull(product);
+        }
+
+        @Test
+        @DisplayName("Then handle null SKU in DTO")
+        void thenHandleNullSkuInDTO() {
+            // Given
+            ProductDTO dto = new ProductDTO();
+            dto.setId(1L);
+            dto.setDescription("Test Product");
+            dto.setSku(null);
+
+            // When
+            Product product = mapper.toProduct(dto);
+
+            // Then
+            assertNotNull(product);
+            assertEquals(dto.getId(), product.getId());
+            assertEquals(dto.getDescription(), product.getDescription());
+            assertNull(product.getSku());
         }
     }
 
@@ -194,6 +277,16 @@ class ProductMapperTest {
             assertNotNull(dtos);
             assertTrue(dtos.isEmpty());
         }
+
+        @Test
+        @DisplayName("Then handle null list")
+        void thenHandleNullList() {
+            // When
+            List<ProductDTO> dtos = mapper.toProductDTOList(null);
+
+            // Then
+            assertNull(dtos);
+        }
     }
 
     @Nested
@@ -241,6 +334,20 @@ class ProductMapperTest {
         void thenMapProductOrdersToOrderIdsHandlesNull() {
             // When
             Set<Long> orderIds = mapper.mapProductOrdersToOrderIds(null);
+
+            // Then
+            assertNotNull(orderIds);
+            assertTrue(orderIds.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Then mapProductOrdersToOrderIds handles empty list")
+        void thenMapProductOrdersToOrderIdsHandlesEmptyList() {
+            // Given
+            List<ProductOrder> productOrders = new ArrayList<>();
+
+            // When
+            Set<Long> orderIds = mapper.mapProductOrdersToOrderIds(productOrders);
 
             // Then
             assertNotNull(orderIds);

@@ -2,21 +2,18 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.OrderDTO;
-import com.example.store.dto.auth.AuthReqDTO;
-import com.example.store.dto.auth.AuthRespDTO;
-import com.example.store.persistence.entity.User;
-import com.example.store.persistence.repo.UserRepo;
-import com.google.gson.Gson;
-import org.springframework.context.annotation.Import;
+import com.example.store.dto.auth.resp.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
 import com.example.store.persistence.entity.Product;
+import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.persistence.repo.ProductRepo;
+import com.example.store.persistence.repo.UserRepo;
 import com.example.store.service.store.OrderService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -40,7 +38,6 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -63,7 +60,7 @@ class OrderControllerIntTest {
     private Gson gson;
     
     // Custom Gson instance that preserves camelCase field names
-    private Gson customGson = new com.google.gson.GsonBuilder()
+    private final Gson customGson = new com.google.gson.GsonBuilder()
             .setFieldNamingPolicy(com.google.gson.FieldNamingPolicy.IDENTITY)
             .create();
 

@@ -20,9 +20,11 @@ import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -72,6 +74,86 @@ class FieldErrorExtractorTest {
             assertEquals(field, result.get(0).getField());
             assertEquals(rejectedValue, result.get(0).getRejectedValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null rejected value")
+        void thenHandleNullRejectedValue() {
+            // Given
+            String field = "name";
+            String defaultMessage = "Name is required";
+
+            FieldError fieldError = new FieldError("object", field, null,
+                    false, null, null, defaultMessage);
+
+            List<FieldError> fieldErrors = new ArrayList<>();
+            fieldErrors.add(fieldError);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(fieldErrors);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals("", result.get(0).getRejectedValue());
+            assertEquals(defaultMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null default message")
+        void thenHandleNullDefaultMessage() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+
+            FieldError fieldError = new FieldError("object", field, rejectedValue,
+                    false, null, null, null);
+
+            List<FieldError> fieldErrors = new ArrayList<>();
+            fieldErrors.add(fieldError);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(fieldErrors);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertNull(result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null default message that would start with global.400")
+        void thenHandleNullDefaultMessageThatWouldStartWithGlobal400() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+
+            // Create a mock FieldError with a null default message
+            // but we'll verify that the code would check if it starts with "global.400"
+            FieldError fieldError = mock(FieldError.class);
+            when(fieldError.getField()).thenReturn(field);
+            when(fieldError.getRejectedValue()).thenReturn(rejectedValue);
+            when(fieldError.getDefaultMessage()).thenReturn(null);
+
+            List<FieldError> fieldErrors = new ArrayList<>();
+            fieldErrors.add(fieldError);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(fieldErrors);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertNull(result.get(0).getErrMsg());
+
+            // Verify that getDefaultMessage was called, which means the code tried to check
+            // if it starts with "global.400"
+            verify(fieldError, times(1)).getDefaultMessage();
         }
 
         @Test
@@ -187,6 +269,63 @@ class FieldErrorExtractorTest {
             assertEquals("global", result.get(0).getField());
             assertEquals("null", result.get(0).getRejectedValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null default message in non-field errors")
+        void thenHandleNullDefaultMessageInNonFieldErrors() {
+            // Given
+            ObjectError objectError = mock(ObjectError.class);
+            when(objectError.getDefaultMessage()).thenReturn(null);
+            lenient().when(objectError.getArguments()).thenReturn(null);
+
+            List<ObjectError> errors = new ArrayList<>();
+            errors.add(objectError);
+
+            HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
+            doReturn(errors).when(exception).getAllErrors();
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("global", result.get(0).getField());
+            assertEquals("null", result.get(0).getRejectedValue());
+            assertNull(result.get(0).getErrMsg());
+
+            // Verify that getDefaultMessage was called
+            verify(objectError, times(1)).getDefaultMessage();
+        }
+
+        @Test
+        @DisplayName("Then handle null default message that would start with global.400 in non-field errors")
+        void thenHandleNullDefaultMessageThatWouldStartWithGlobal400InNonFieldErrors() {
+            // Given
+            ObjectError objectError = mock(ObjectError.class);
+            when(objectError.getDefaultMessage()).thenReturn(null);
+            lenient().when(objectError.getArguments()).thenReturn(null);
+
+            List<ObjectError> errors = new ArrayList<>();
+            errors.add(objectError);
+
+            HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
+            doReturn(errors).when(exception).getAllErrors();
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("global", result.get(0).getField());
+            assertEquals("null", result.get(0).getRejectedValue());
+            assertNull(result.get(0).getErrMsg());
+
+            // Verify that getDefaultMessage was called, which means the code tried to check
+            // if it starts with "global.400"
+            verify(objectError, times(1)).getDefaultMessage();
         }
 
         @Test

@@ -10,7 +10,7 @@ spring:
 application:
   security:
     jwt:
+      token-prefix: "Bearer "
       secret-key: ${SECRET_KEY}
       expiration: ${JWT_EXPIRE}
-      refresh-token:
-        expiration: ${REFR_TKN_EXPIRE}
+      refreshExpiration: ${JWT_REFRESH_EXPIRATION:259200000}  # 3 days
