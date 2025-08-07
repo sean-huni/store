@@ -17,7 +17,7 @@ public class IntTestConfig {
     @Bean
     @ServiceConnection
     PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:14-alpine"))
+        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"))
                 .withDatabaseName("store_int_db")
                 .withUsername("postgres_int")
                 .withPassword("postgres_int")

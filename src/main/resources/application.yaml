@@ -1,4 +1,7 @@
 spring:
+  docker:
+    compose:
+      file: src/main/resources/dc/dev-env.yml
   jpa:
     hibernate:
       ddl-auto: validate

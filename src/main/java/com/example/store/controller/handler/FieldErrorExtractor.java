@@ -8,8 +8,9 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.example.store.constant.AppConstant.GLOBAL_ERROR_MSG_PREFIX;
 
 class FieldErrorExtractor {
     private final MessageSource messageSource;
@@ -33,7 +34,7 @@ class FieldErrorExtractor {
 
             // Resolve the message using MessageSource
             final String defaultMessage = fieldError.getDefaultMessage();
-            if (defaultMessage != null && defaultMessage.startsWith("global.400")) {
+            if (defaultMessage != null && defaultMessage.startsWith(GLOBAL_ERROR_MSG_PREFIX)) {
                 violationDTO.setErrMsg(messageSource.getMessage(defaultMessage, fieldError.getArguments(), defaultMessage, locale));
             } else {
                 violationDTO.setErrMsg(defaultMessage);
@@ -57,7 +58,7 @@ class FieldErrorExtractor {
 
                 // Resolve the message using MessageSource
                 final String defaultMessage = fieldError.getDefaultMessage();
-                if (defaultMessage != null && defaultMessage.startsWith("global.400")) {
+                if (defaultMessage != null && defaultMessage.startsWith(GLOBAL_ERROR_MSG_PREFIX)) {
                     violationDTO.setErrMsg(messageSource.getMessage(defaultMessage, fieldError.getArguments(), defaultMessage, locale));
                 } else {
                     violationDTO.setErrMsg(defaultMessage);
@@ -68,7 +69,7 @@ class FieldErrorExtractor {
 
                 // Resolve the message using MessageSource
                 final String defaultMessage = err.getDefaultMessage();
-                if (defaultMessage != null && defaultMessage.startsWith("global.400")) {
+                if (defaultMessage != null && defaultMessage.startsWith(GLOBAL_ERROR_MSG_PREFIX)) {
                     violationDTO.setErrMsg(messageSource.getMessage(defaultMessage, err.getArguments(), defaultMessage, locale));
                 } else {
                     violationDTO.setErrMsg(defaultMessage);
