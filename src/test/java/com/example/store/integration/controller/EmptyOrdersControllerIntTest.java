@@ -1,8 +1,8 @@
 package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
@@ -110,9 +110,7 @@ class EmptyOrdersControllerIntTest {
         testUser = userRepo.save(testUser);
         
         // Authenticate and get token
-        AuthReqDTO authRequest = new AuthReqDTO();
-        authRequest.setEmail("test@example.com");
-        authRequest.setPassword("password");
+        final AuthReqDTO authRequest = new AuthReqDTO("test@example.com", "password");
         
         MvcResult result = mockMvc.perform(post("/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -122,8 +120,8 @@ class EmptyOrdersControllerIntTest {
         
         AuthRespDTO authResponse = objectMapper.readValue(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
-        
-        authToken = "Bearer " + authResponse.getAccessToken();
+
+        authToken = "Bearer " + authResponse.accessToken();
     }
 
     @Test

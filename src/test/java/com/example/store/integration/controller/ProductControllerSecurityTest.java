@@ -2,8 +2,8 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.ProductDTO;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Product;
 import com.example.store.persistence.entity.User;
@@ -73,12 +73,12 @@ class ProductControllerSecurityTest {
         // Clean up existing data
         productRepo.deleteAll();
         userRepo.deleteAll();
-        
+
         // Reset sequences
         entityManager.createNativeQuery("ALTER SEQUENCE product_id_seq RESTART WITH 1").executeUpdate();
         entityManager.createNativeQuery("ALTER SEQUENCE user_id_seq RESTART WITH 1").executeUpdate();
         entityManager.flush();
-        
+
         // Create test user
         testUser = User.builder()
                 .firstName("Test")
@@ -92,7 +92,7 @@ class ProductControllerSecurityTest {
                 .credentialsNonExpired(true)
                 .build();
         testUser = userRepo.save(testUser);
-        
+
         // Create test product
         testProduct = new Product();
         testProduct.setDescription("Test Product");
@@ -100,22 +100,20 @@ class ProductControllerSecurityTest {
         testProduct.setUpdated(ZonedDateTime.now());
         testProduct.setCreated(ZonedDateTime.now());
         testProduct = productRepo.save(testProduct);
-        
+
         // Authenticate and get token
-        AuthReqDTO authRequest = new AuthReqDTO();
-        authRequest.setEmail("test@example.com");
-        authRequest.setPassword("password");
-        
+        final AuthReqDTO authRequest = new AuthReqDTO("test@example.com", "password");
+
         MvcResult result = mockMvc.perform(post("/auth/authenticate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
-        
+
         AuthRespDTO authResponse = objectMapper.readValue(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
-        
-        authToken = "Bearer " + authResponse.getAccessToken();
+
+        authToken = "Bearer " + authResponse.accessToken();
     }
 
     @Nested
@@ -144,8 +142,8 @@ class ProductControllerSecurityTest {
             newProduct.setSku(UUID.randomUUID());
 
             mockMvc.perform(post("/products")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newProduct)))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(newProduct)))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -158,7 +156,7 @@ class ProductControllerSecurityTest {
         @DisplayName("Then return 200 when getting all products")
         void thenReturn200WhenGettingAllProducts() throws Exception {
             mockMvc.perform(get("/products")
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].id").value(testProduct.getId()))
@@ -169,7 +167,7 @@ class ProductControllerSecurityTest {
         @DisplayName("Then return 200 when getting product by ID")
         void thenReturn200WhenGettingProductById() throws Exception {
             mockMvc.perform(get("/products/" + testProduct.getId())
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testProduct.getId()))
                     .andExpect(jsonPath("$.description").value(testProduct.getDescription()));
@@ -183,9 +181,9 @@ class ProductControllerSecurityTest {
             newProduct.setSku(UUID.randomUUID());
 
             mockMvc.perform(post("/products")
-                    .header("Authorization", authToken)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newProduct)))
+                            .header("Authorization", authToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(newProduct)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.description").value("New Product"))
                     .andExpect(jsonPath("$.sku").isNotEmpty())

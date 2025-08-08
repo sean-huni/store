@@ -6,7 +6,7 @@ import com.example.store.exception.CustomerNotFoundException;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
 import jakarta.validation.ConstraintViolationException;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 import static com.example.store.constant.AppConstant.GLOBAL_ERROR_MSG_PREFIX;
 
 
-@Log4j2
+@Slf4j
 @RestControllerAdvice
 public class ValidationExceptionHandler {
     private static final String GLOBAL_ERROR_CODE = "global.400.000";
@@ -193,9 +194,13 @@ public class ValidationExceptionHandler {
     @ResponseBody
     public ErrorDTO handleInvalidRefreshTokenException(final InvalidRefreshTokenException ex) {
         log.error("Invalid refresh token", ex);
+
+        // Extract the message from the message source using the error code
+        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), locale);
+        
         return new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
-                ex.getMessage(),
+                errorMessage,
                 null,
                 ZonedDateTime.now()
         );
@@ -222,6 +227,40 @@ public class ValidationExceptionHandler {
         return new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
                 "User not found",
+                null,
+                ZonedDateTime.now()
+        );
+    }
+
+    /**
+     * Handles MethodArgumentTypeMismatchException which occurs when a method argument cannot be converted to the expected type.
+     * This is particularly useful for enum parameters like SortEnumDTO where invalid values should return a 400 error.
+     *
+     * @param ex the exception to handle
+     * @return a {@link ErrorDTO} containing error details
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException ex) {
+        log.error("Method argument type mismatch", ex);
+
+        String errorMessage;
+
+        // Check if this is a sortDir parameter error
+        if ("sortDir".equals(ex.getName()) && ex.getRequiredType() != null &&
+                ex.getRequiredType().isEnum()) {
+            // Use the specific error message for sortDir
+            errorMessage = messageSource.getMessage("global.400.009", null, "Invalid sort direction", locale);
+        } else {
+            // Generic error for other type mismatches
+            errorMessage = String.format("Parameter '%s' has invalid value: '%s'",
+                    ex.getName(), ex.getValue());
+        }
+
+        return new ErrorDTO(
+                HttpStatus.BAD_REQUEST.name(),
+                errorMessage,
                 null,
                 ZonedDateTime.now()
         );

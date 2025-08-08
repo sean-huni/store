@@ -1,16 +1,16 @@
 package com.example.store.service.auth;
 
 import com.example.store.config.security.JwtProperties;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
-import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
-import com.example.store.dto.auth.resp.RegReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.req.RefreshTokenReqDTO;
+import com.example.store.dto.auth.req.RegReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Log4j2
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -32,34 +32,34 @@ public class AuthService {
 
     @Transactional
     public AuthRespDTO register(final RegReqDTO request) {
-        log.info("Registering new user with email: {}", request.getEmail());
-        
+        log.info("Registering new user with email: {}", request.email());
+
         // Check if user already exists
-        if (userRepo.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException("Email already registered: " + request.getEmail());
+        if (userRepo.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException("Email already registered: %s".formatted(request.email()));
         }
-        
+
         // Create new user
         final User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
                 .role(User.Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
                 .build();
-        
+
         userRepo.save(user);
-        
+
         // Generate tokens
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        
+
         log.info("User registered successfully: {}", user.getEmail());
-        
+
         return AuthRespDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -70,28 +70,28 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthRespDTO authenticate(final AuthReqDTO request) {
-        log.info("Authenticating user: {}", request.getEmail());
-        
+        log.info("Authenticating user: {}", request.email());
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getEmail(),
-                            request.getPassword()
+                            request.email(),
+                            request.password()
                     )
             );
         } catch (BadCredentialsException e) {
-            log.error("Invalid credentials for user: {}", request.getEmail());
+            log.error("Invalid credentials for user: {}", request.email());
             throw new BadCredentialsException("Invalid email or password");
         }
-        
-        User user = userRepo.findByEmail(request.getEmail())
+
+        User user = userRepo.findByEmail(request.email())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        
+
         log.info("User authenticated successfully: {}", user.getEmail());
-        
+
         return AuthRespDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -102,29 +102,29 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthRespDTO refreshToken(final RefreshTokenReqDTO request) {
-        String refreshToken = request.getRefreshToken();
-        
+        final String refreshToken = request.refreshToken();
+
         try {
-            String userEmail = jwtService.extractUsername(refreshToken);
-            
+            final String userEmail = jwtService.extractUsername(refreshToken);
+
             if (userEmail == null) {
-                throw new InvalidRefreshTokenException("Invalid refresh token");
+                throw new InvalidRefreshTokenException("auth.400.006");
             }
-            
-            User user = userRepo.findByEmail(userEmail)
+
+            final User user = userRepo.findByEmail(userEmail)
                     .orElseThrow(() -> {
                         log.error("Error refreshing token: User not found");
                         return new UsernameNotFoundException("User not found");
                     });
-            
+
             if (!jwtService.isTokenValid(refreshToken, user)) {
-                throw new InvalidRefreshTokenException("Invalid or expired refresh token");
+                throw new InvalidRefreshTokenException("auth.400.007");
             }
-            
+
             String newAccessToken = jwtService.generateAccessToken(user);
-            
+
             log.info("Token refreshed for user: {}", user.getEmail());
-            
+
             return AuthRespDTO.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(refreshToken)
@@ -132,16 +132,17 @@ public class AuthService {
                     .expiresIn(jwtProperties.getExpiration())
                     .build();
 
-        } catch (UsernameNotFoundException e) {
+        } catch (final UsernameNotFoundException e) {
+            log.error("Invalid refresh token: {}", refreshToken, e);
             // Rethrow UsernameNotFoundException to maintain the expected exception type
             throw e;
-        } catch (InvalidRefreshTokenException e) {
+        } catch (final InvalidRefreshTokenException e) {
+            log.error("Error refreshing token: {}", e.getMessage(), e);
             // Rethrow InvalidRefreshTokenException to maintain the original error message
-            log.error("Error refreshing token: {}", e.getMessage());
             throw e;
-        } catch (Exception e) {
-            log.error("Error refreshing token: {}", e.getMessage());
-            throw new InvalidRefreshTokenException("Invalid refresh token");
+        } catch (final Exception e) {
+            log.error("Error refreshing token: {}", e.getMessage(), e);
+            throw new InvalidRefreshTokenException("auth.400.006");
         }
     }
 }

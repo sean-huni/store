@@ -227,15 +227,20 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then create ErrorDTO with UNAUTHORIZED status")
         void thenCreateErrorDTOWithUnauthorizedStatus() {
             // Given
-            String errorMessage = "Invalid refresh token";
-            InvalidRefreshTokenException exception = new InvalidRefreshTokenException(errorMessage);
+            String errorCode = "auth.400.006";
+            String resolvedMessage = "Invalid refresh token";
+            InvalidRefreshTokenException exception = new InvalidRefreshTokenException(errorCode);
+
+            // Mock the message source to return the resolved message when given the error code
+            when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), any(Locale.class)))
+                    .thenReturn(resolvedMessage);
             
             // When
             ErrorDTO result = validationExceptionHandler.handleInvalidRefreshTokenException(exception);
             
             // Then
             assertNotNull(result);
-            assertEquals(errorMessage, result.getMessage());
+            assertEquals(resolvedMessage, result.getMessage());
             assertEquals("UNAUTHORIZED", result.getName());
             assertNull(result.getViolations());
             assertNotNull(result.getTimestamp());

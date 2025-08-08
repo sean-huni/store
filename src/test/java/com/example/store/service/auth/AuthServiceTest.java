@@ -1,10 +1,10 @@
 package com.example.store.service.auth;
 
 import com.example.store.config.security.JwtProperties;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
-import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
-import com.example.store.dto.auth.resp.RegReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.req.RefreshTokenReqDTO;
+import com.example.store.dto.auth.req.RegReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
 import com.example.store.persistence.entity.User;
@@ -72,15 +72,8 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         // Setup common test data
-        regReqDTO = new RegReqDTO();
-        regReqDTO.setFirstName("John");
-        regReqDTO.setLastName("Doe");
-        regReqDTO.setEmail(email);
-        regReqDTO.setPassword(password);
-
-        authReqDTO = new AuthReqDTO();
-        authReqDTO.setEmail(email);
-        authReqDTO.setPassword(password);
+        regReqDTO = new RegReqDTO("John", "Doe", email, password);
+        authReqDTO = new AuthReqDTO(email, password);
 
         refreshTokenReqDTO = new RefreshTokenReqDTO(refreshToken);
 
@@ -115,10 +108,10 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(accessToken, response.getAccessToken());
-        assertEquals(refreshToken, response.getRefreshToken());
-        assertEquals("Bearer", response.getTokenType());
-        assertEquals(expiration, response.getExpiresIn());
+        assertEquals(accessToken, response.accessToken());
+        assertEquals(refreshToken, response.refreshToken());
+        assertEquals("Bearer", response.tokenType());
+        assertEquals(expiration, response.expiresIn());
 
         // Verify user creation
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -160,10 +153,10 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(accessToken, response.getAccessToken());
-        assertEquals(refreshToken, response.getRefreshToken());
-        assertEquals("Bearer", response.getTokenType());
-        assertEquals(expiration, response.getExpiresIn());
+        assertEquals(accessToken, response.accessToken());
+        assertEquals(refreshToken, response.refreshToken());
+        assertEquals("Bearer", response.tokenType());
+        assertEquals(expiration, response.expiresIn());
 
         // Verify authentication
         verify(authenticationManager).authenticate(
@@ -216,10 +209,9 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(accessToken, response.getAccessToken());
-        assertEquals(refreshToken, response.getRefreshToken());
-        assertEquals("Bearer", response.getTokenType());
-        assertEquals(expiration, response.getExpiresIn());
+        assertEquals(refreshToken, response.refreshToken());
+        assertEquals("Bearer", response.tokenType());
+        assertEquals(expiration, response.expiresIn());
     }
 
     @Test
@@ -236,7 +228,7 @@ class AuthServiceTest {
                 () -> authService.refreshToken(refreshTokenReqDTO)
         );
 
-        assertEquals("Invalid or expired refresh token", exception.getMessage());
+        assertEquals("auth.400.007", exception.getMessage());
     }
 
     @Test
@@ -251,7 +243,7 @@ class AuthServiceTest {
                 () -> authService.refreshToken(refreshTokenReqDTO)
         );
 
-        assertEquals("Invalid refresh token", exception.getMessage());
+        assertEquals("auth.400.006", exception.getMessage());
     }
 
     @Test
@@ -282,6 +274,6 @@ class AuthServiceTest {
                 () -> authService.refreshToken(refreshTokenReqDTO)
         );
 
-        assertEquals("Invalid refresh token", exception.getMessage());
+        assertEquals("auth.400.006", exception.getMessage());
     }
 }

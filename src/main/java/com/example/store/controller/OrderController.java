@@ -10,8 +10,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,10 +34,10 @@ public class OrderController {
 
     @GetMapping
     public List<OrderDTO> findOrders(
-            @RequestParam(required = false) @Min(value = 0, message = "global.400.006") Integer page,
-            @RequestParam(required = false) @Min(value = 5, message = "global.400.005") Integer limit,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) SortEnumDTO sortDir) {
+            @RequestParam(required = false) @Min(value = 0, message = "global.400.006") final Integer page,
+            @RequestParam(required = false) @Min(value = 5, message = "global.400.005") final Integer limit,
+            @RequestParam(required = false) final String sortBy,
+            @RequestParam(required = false) final SortEnumDTO sortDir) {
 
         final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir, globalSearchProps.getLimit(),
                 globalSearchProps.getSortField(),
@@ -48,13 +48,13 @@ public class OrderController {
     }
 
     @GetMapping("{id}")
-    public OrderDTO getOrderById(@PathVariable("id") @Positive(message = "global.400.003") Long id) {
+    public OrderDTO getOrderById(@PathVariable("id") @Positive(message = "global.400.003") final Long id) {
         return orderService.findOrderById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderDTO createOrder(@Valid @RequestBody OrderDTO orderDTO) {
+    public OrderDTO createOrder(@Valid @RequestBody final OrderDTO orderDTO) {
         return orderService.createOrder(orderDTO);
     }
 }

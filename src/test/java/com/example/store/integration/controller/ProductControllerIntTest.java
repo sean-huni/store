@@ -2,7 +2,7 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.ProductDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Product;
 import com.example.store.persistence.entity.User;
@@ -57,19 +57,19 @@ class ProductControllerIntTest {
 
     @Autowired
     private ProductRepo productRepo;
-    
+
     @Autowired
     private EntityManager entityManager;
-    
+
     @Autowired
     private UserRepo userRepo;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private Gson gson;
-    
+
     // Custom Gson instance that preserves camelCase field names
     private final Gson customGson = new com.google.gson.GsonBuilder()
             .setFieldNamingPolicy(com.google.gson.FieldNamingPolicy.IDENTITY)
@@ -85,12 +85,12 @@ class ProductControllerIntTest {
         // Delete all existing data
         productRepo.deleteAll();
         userRepo.deleteAll();
-        
+
         // Reset sequences to avoid duplicate key violations
         entityManager.createNativeQuery("ALTER SEQUENCE product_id_seq RESTART WITH 1").executeUpdate();
         entityManager.createNativeQuery("ALTER SEQUENCE user_id_seq RESTART WITH 1").executeUpdate();
         entityManager.flush();
-        
+
         // First, create and save the test user
         testUser = User.builder()
                 .firstName("Test")
@@ -104,37 +104,35 @@ class ProductControllerIntTest {
                 .credentialsNonExpired(true)
                 .build();
         testUser = userRepo.save(testUser);
-        
-        // Authenticate and get token
-        AuthReqDTO authRequest = new AuthReqDTO();
-        authRequest.setEmail("test@example.com");
-        authRequest.setPassword("password");
 
-        MvcResult result = mockMvc.perform(post("/auth/authenticate")
+        // Authenticate and get token
+        final AuthReqDTO authRequest = new AuthReqDTO("test@example.com", "password");
+
+        final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(customGson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String responseContent = result.getResponse().getContentAsString();
+        final String responseContent = result.getResponse().getContentAsString();
         System.out.println("[DEBUG_LOG] Authentication response: " + responseContent);
-        
+
         // Manual JSON parsing to extract the access token
         try {
             // Create a simple JSON object to extract the token
             JsonObject jsonObject = gson.fromJson(responseContent, JsonObject.class);
             String accessToken = jsonObject.get("accessToken").getAsString();
-            
+
             authToken = "Bearer " + accessToken;
             System.out.println("[DEBUG_LOG] Auth token set to: " + authToken);
         } catch (Exception e) {
             System.out.println("[DEBUG_LOG] Failed to extract access token: " + e.getMessage());
             authToken = null;
         }
-        
+
         // Now create the test data
         testSku = UUID.randomUUID();
-        
+
         // Create test product
         testProduct = new Product();
         testProduct.setDescription("Test Product");
@@ -151,7 +149,7 @@ class ProductControllerIntTest {
         void thenReturnAllProducts() throws Exception {
             // When & Then
             mockMvc.perform(get("/products")
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].id").value(testProduct.getId()))
@@ -164,12 +162,45 @@ class ProductControllerIntTest {
         void thenReturnEmptyListWhenNoProductsExist() throws Exception {
             // Given
             productRepo.deleteAll();
-            
+
             // When & Then
             mockMvc.perform(get("/products")
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when page parameter is negative")
+        void thenReturn400WhenPageParameterIsNegative() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/products?page=-1")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("findProducts.page"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when limit parameter is less than minimum")
+        void thenReturn400WhenLimitParameterIsLessThanMinimum() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/products?limit=4")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("findProducts.limit"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when sortDir parameter is invalid")
+        void thenReturn400WhenSortDirParameterIsInvalid() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/products?sortDir=invalid")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.name").value("BAD_REQUEST"))
+                    .andExpect(jsonPath("$.message").exists());
         }
     }
 
@@ -182,7 +213,7 @@ class ProductControllerIntTest {
         void thenReturnProductWhenFound() throws Exception {
             // When & Then
             mockMvc.perform(get("/products/" + testProduct.getId())
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testProduct.getId()))
                     .andExpect(jsonPath("$.description").value(testProduct.getDescription()))
@@ -194,7 +225,7 @@ class ProductControllerIntTest {
         void thenReturnNullWhenProductNotFound() throws Exception {
             // When & Then
             mockMvc.perform(get("/products/999")
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(result -> {
                         // Just verify that we get a 404 status, don't check the response body
@@ -208,7 +239,7 @@ class ProductControllerIntTest {
         void thenReturn400WhenIdIsInvalid() throws Exception {
             // When & Then
             mockMvc.perform(get("/products/-1")
-                    .header("Authorization", authToken))
+                            .header("Authorization", authToken))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -240,7 +271,7 @@ class ProductControllerIntTest {
             // Then
             ProductDTO createdProduct = objectMapper.readValue(
                     result.getResponse().getContentAsString(), ProductDTO.class);
-            
+
             Product savedProduct = productRepo.findById(createdProduct.getId()).orElse(null);
             assertNotNull(savedProduct);
             assertEquals("New Product", savedProduct.getDescription());
@@ -253,7 +284,7 @@ class ProductControllerIntTest {
             // Given
             ProductDTO invalidProduct = new ProductDTO();
             invalidProduct.setSku(UUID.randomUUID());
-            
+
             // When & Then
             mockMvc.perform(post("/products")
                             .header("Authorization", authToken)
@@ -268,7 +299,7 @@ class ProductControllerIntTest {
             // Given
             ProductDTO invalidProduct = new ProductDTO();
             invalidProduct.setDescription("Invalid Product");
-            
+
             // When & Then
             mockMvc.perform(post("/products")
                             .header("Authorization", authToken)
