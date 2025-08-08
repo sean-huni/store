@@ -1,17 +1,17 @@
 package com.example.store.controller;
 
-import com.example.store.persistence.entity.Customer;
-import com.example.store.persistence.entity.Order;
 import com.example.store.component.GlobalSearchProps;
 import com.example.store.dto.CustomerDTO;
 import com.example.store.dto.OrderDTO;
+import com.example.store.persistence.entity.Customer;
+import com.example.store.persistence.entity.Order;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.service.store.OrderService;
 import com.example.store.util.PageableBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,15 +30,18 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
+@Tag("unit")
 class OrderControllerTests {
 
     private MockMvc mockMvc;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
     private OrderRepo orderRepo;

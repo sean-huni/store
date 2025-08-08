@@ -1,9 +1,9 @@
 package com.example.store.controller.auth;
 
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
-import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
-import com.example.store.dto.auth.resp.RegReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.req.RefreshTokenReqDTO;
+import com.example.store.dto.auth.req.RegReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,17 +20,17 @@ public class AuthController {
     private final AuthService authenticationService;
 
     @PostMapping("/register")
-    public AuthRespDTO register(@Valid @RequestBody RegReqDTO request) {
+    public AuthRespDTO register(final @Valid @RequestBody RegReqDTO request) {
         return authenticationService.register(request);
     }
 
     @PostMapping("/authenticate")
-    public AuthRespDTO authenticate(@Valid @RequestBody AuthReqDTO request) {
+    public AuthRespDTO authenticate(final @Valid @RequestBody AuthReqDTO request) {
         return authenticationService.authenticate(request);
     }
 
     @PostMapping("/refresh-token")
-    public AuthRespDTO refreshToken(final @RequestHeader("Authorization") RefreshTokenReqDTO refreshToken) {
+    public AuthRespDTO refreshToken(final @Valid @RequestHeader("Authorization") RefreshTokenReqDTO refreshToken) {
         return authenticationService.refreshToken(refreshToken);
     }
 }

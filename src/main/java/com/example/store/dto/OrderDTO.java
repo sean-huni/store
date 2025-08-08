@@ -4,13 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.validation.annotation.Validated;
 
 import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Validated
 public class OrderDTO extends AbstractSuperDTO {
     @NotBlank(message = "global.400.004")
     private String description;

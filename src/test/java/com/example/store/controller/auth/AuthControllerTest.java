@@ -1,10 +1,10 @@
 package com.example.store.controller.auth;
 
 import com.example.store.config.security.JwtProperties;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
-import com.example.store.dto.auth.resp.RefreshTokenReqDTO;
-import com.example.store.dto.auth.resp.RegReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.req.RefreshTokenReqDTO;
+import com.example.store.dto.auth.req.RegReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.service.auth.AuthService;
 import com.example.store.service.auth.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,11 +67,7 @@ class AuthControllerTest {
     @DisplayName("Should register a new user")
     void shouldRegisterNewUser() throws Exception {
         // Given
-        RegReqDTO regReqDTO = new RegReqDTO();
-        regReqDTO.setFirstName("John");
-        regReqDTO.setLastName("Doe");
-        regReqDTO.setEmail("john.doe@example.com");
-        regReqDTO.setPassword("password123");
+        final RegReqDTO regReqDTO = new RegReqDTO("John", "Doe", "john.doe@example.com", "password123");
 
         when(authService.register(any(RegReqDTO.class))).thenReturn(authRespDTO);
 
@@ -90,9 +86,7 @@ class AuthControllerTest {
     @DisplayName("Should authenticate a user")
     void shouldAuthenticateUser() throws Exception {
         // Given
-        AuthReqDTO authReqDTO = new AuthReqDTO();
-        authReqDTO.setEmail("john.doe@example.com");
-        authReqDTO.setPassword("password123");
+        final AuthReqDTO authReqDTO = new AuthReqDTO("john.doe@example.com", "password123");
 
         when(authService.authenticate(any(AuthReqDTO.class))).thenReturn(authRespDTO);
 
@@ -111,7 +105,7 @@ class AuthControllerTest {
     @DisplayName("Should refresh token")
     void shouldRefreshToken() throws Exception {
         // Given
-        RefreshTokenReqDTO refreshTokenReqDTO = new RefreshTokenReqDTO("test-refresh-token");
+        final RefreshTokenReqDTO refreshTokenReqDTO = new RefreshTokenReqDTO("test-refresh-token");
 
         when(authService.refreshToken(any(RefreshTokenReqDTO.class))).thenReturn(authRespDTO);
 

@@ -31,15 +31,15 @@ public class ProductController {
     private final GlobalSearchProps globalSearchProps;
 
     @GetMapping("{id}")
-    public ProductDTO findProductById(@PathVariable("id") final @Positive(message = "global.400.003") Long id) {
+    public ProductDTO findProductById(@PathVariable("id") @Positive(message = "global.400.003") final Long id) {
         return productService.findProductById(id);
     }
 
     @GetMapping
-    public List<ProductDTO> findProducts(final @RequestParam(required = false) @Min(value = 0, message = "global.400.006") Integer page,
-                                         final @RequestParam(required = false) @Min(value = 5, message = "global.400.005") Integer limit,
-                                         final @RequestParam(required = false) String sortBy,
-                                         final @RequestParam(required = false) SortEnumDTO sortDir) {
+    public List<ProductDTO> findProducts(@RequestParam(required = false) @Min(value = 0, message = "global.400.006") final Integer page,
+                                         @RequestParam(required = false) @Min(value = 5, message = "global.400.005") final Integer limit,
+                                         @RequestParam(required = false) final String sortBy,
+                                         @RequestParam(required = false) final SortEnumDTO sortDir) {
 
         final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir, globalSearchProps.getLimit(),
                 globalSearchProps.getSortField(),

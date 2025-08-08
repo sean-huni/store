@@ -37,11 +37,11 @@ public class CustomerController {
     @GetMapping
 
     public List<CustomerDTO> findCustomers(
-            final @RequestParam(required = false) String name,
-            final @RequestParam(required = false) @Min(value = 0, message = "global.400.006") Integer page,
-            final @RequestParam(required = false) @Min(value = 5, message = "global.400.005") Integer limit,
-            final @RequestParam(required = false) String sortBy,
-            final @RequestParam(required = false) SortEnumDTO sortDir) {
+            @RequestParam(required = false) final String name,
+            @RequestParam(required = false) @Min(value = 0, message = "global.400.006") final Integer page,
+            @RequestParam(required = false) @Min(value = 5, message = "global.400.005") final Integer limit,
+            @RequestParam(required = false) final String sortBy,
+            @RequestParam(required = false) final SortEnumDTO sortDir) {
 
         final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir, customerSearchProps.getLimit(),
                 customerSearchProps.getSortField(),
@@ -56,13 +56,13 @@ public class CustomerController {
     }
 
     @GetMapping("{id}")
-    public CustomerDTO findCustomerById(@PathVariable("id") @Positive(message = "global.400.003") Long id) {
+    public CustomerDTO findCustomerById(@PathVariable("id") @Positive(message = "global.400.003") final Long id) {
         return customerService.findCustomerById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CustomerDTO createCustomer(final @Valid @RequestBody CustomerDTO customer) {
+    public CustomerDTO createCustomer(@Valid @RequestBody final CustomerDTO customer) {
         return customerService.createCustomer(customer);
     }
 }

@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Log4j2
-@Tag("integration")
+@Tag("int")
 @SpringBootTest
 @ActiveProfiles("int")
 @Testcontainers

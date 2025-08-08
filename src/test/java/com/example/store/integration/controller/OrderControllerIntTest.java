@@ -2,7 +2,7 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.OrderDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
@@ -125,17 +125,15 @@ class OrderControllerIntTest {
         testUser = userRepo.save(testUser);
         
         // Authenticate and get token
-        AuthReqDTO authRequest = new AuthReqDTO();
-        authRequest.setEmail("test@example.com");
-        authRequest.setPassword("password");
+        final AuthReqDTO authRequest = new AuthReqDTO("test@example.com", "password");
 
-        MvcResult result = mockMvc.perform(post("/auth/authenticate")
+        final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String responseContent = result.getResponse().getContentAsString();
+        final String responseContent = result.getResponse().getContentAsString();
         System.out.println("[DEBUG_LOG] Authentication response: " + responseContent);
         
         // Manual JSON parsing to extract the access token
@@ -198,6 +196,38 @@ class OrderControllerIntTest {
                     .andExpect(jsonPath("$[0].customer.id").value(testCustomer.getId()));
         }
 
+        @Test
+        @DisplayName("Then return 400 when page parameter is negative")
+        void thenReturn400WhenPageParameterIsNegative() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/orders?page=-1")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("findOrders.page"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when limit parameter is less than minimum")
+        void thenReturn400WhenLimitParameterIsLessThanMinimum() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/orders?limit=4")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("findOrders.limit"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when sortDir parameter is invalid")
+        void thenReturn400WhenSortDirParameterIsInvalid() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/orders?sortDir=invalid")
+                            .header("Authorization", authToken))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.name").value("BAD_REQUEST"))
+                    .andExpect(jsonPath("$.message").exists());
+        }
     }
 
     @Nested
@@ -305,6 +335,42 @@ class OrderControllerIntTest {
                         // Just verify that we get a 404 status, don't check the response body
                         assertEquals(404, result.getResponse().getStatus());
                     });
+        }
+
+        @Test
+        @DisplayName("Then return 400 when description is missing")
+        void thenReturn400WhenDescriptionIsMissing() throws Exception {
+            // Given
+            OrderDTO invalidOrder = new OrderDTO();
+            invalidOrder.setCustomerId(testCustomer.getId());
+            // Description is intentionally not set
+
+            // When & Then
+            mockMvc.perform(post("/orders")
+                            .header("Authorization", authToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(customGson.toJson(invalidOrder)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("description"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when description is blank")
+        void thenReturn400WhenDescriptionIsBlank() throws Exception {
+            // Given
+            OrderDTO invalidOrder = new OrderDTO();
+            invalidOrder.setCustomerId(testCustomer.getId());
+            invalidOrder.setDescription(""); // Empty string
+
+            // When & Then
+            mockMvc.perform(post("/orders")
+                            .header("Authorization", authToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(customGson.toJson(invalidOrder)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("description"));
         }
     }
 }

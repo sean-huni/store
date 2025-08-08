@@ -1,27 +1,22 @@
-package com.example.store.dto.auth.resp;
+package com.example.store.dto.auth.req;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class RegReqDTO {
-    
+public record RegReqDTO(
     @NotBlank(message = "auth.400.003")
-    private String firstName;
+    String firstName,
+    
     @NotBlank(message = "auth.400.004")
-    private String lastName;
+    String lastName,
+    
     @Email(message = "auth.400.000")
     @NotBlank(message = "auth.400.001")
-    private String email;
+    String email,
+    
     @NotBlank(message = "auth.400.002")
     @Size(min = 8, message = "auth.400.005")
-    private String password;
+    String password
+) {
 }

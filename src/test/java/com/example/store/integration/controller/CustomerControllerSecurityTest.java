@@ -2,8 +2,8 @@ package com.example.store.integration.controller;
 
 import com.example.store.StoreApplication;
 import com.example.store.dto.CustomerDTO;
-import com.example.store.dto.auth.req.AuthRespDTO;
-import com.example.store.dto.auth.resp.AuthReqDTO;
+import com.example.store.dto.auth.req.AuthReqDTO;
+import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.User;
@@ -100,20 +100,18 @@ class CustomerControllerSecurityTest {
         testCustomer = customerRepo.save(testCustomer);
         
         // Authenticate and get token
-        AuthReqDTO authRequest = new AuthReqDTO();
-        authRequest.setEmail("test@example.com");
-        authRequest.setPassword("password");
-        
-        MvcResult result = mockMvc.perform(post("/auth/authenticate")
+        final AuthReqDTO authRequest = new AuthReqDTO("test@example.com", "password");
+
+        final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
-        
-        AuthRespDTO authResponse = objectMapper.readValue(
+
+        final AuthRespDTO authResponse = objectMapper.readValue(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
-        
-        authToken = "Bearer " + authResponse.getAccessToken();
+
+        authToken = "Bearer " + authResponse.accessToken();
     }
 
     @Nested
