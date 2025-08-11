@@ -4,6 +4,7 @@ import com.example.store.config.security.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -23,34 +24,33 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class JwtService {
-
     private final JwtProperties jwtProperties;
 
-    public String extractUsername(String token) {
+    public String extractUsername(final String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    public String generateAccessToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
+    public String generateAccessToken(final UserDetails userDetails) {
+        final Map<String, Object> claims = new HashMap<>();
         claims.put("authorities", userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
         return createToken(claims, userDetails.getUsername(), jwtProperties.getExpiration());
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
+    public String generateRefreshToken(final UserDetails userDetails) {
         return createToken(new HashMap<>(), userDetails.getUsername(), jwtProperties.getRefreshExpiration());
     }
 
-    private String createToken(Map<String, Object> claims, String subject, Long expiration) {
+    private String createToken(final Map<String, Object> claims, final String subject, final Long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
-        
+
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
@@ -60,17 +60,29 @@ public class JwtService {
                 .compact();
     }
 
-    public Boolean isTokenValid(String token, UserDetails userDetails) {
+    public Boolean isTokenValid(final String token, final UserDetails userDetails) {
+        if (token == null || token.isEmpty() || userDetails == null) {
+            return false;
+        }
+
         try {
             final String username = extractUsername(token);
-            return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
-        } catch (ExpiredJwtException e) {
-            log.debug("Token expired: {}", e.getMessage());
+            return (username.equals(userDetails.getUsername())) &&
+                    !isTokenExpired(token) &&
+                    userDetails.isEnabled();
+        } catch (final ExpiredJwtException e) {
+            log.debug("Token expired: {}", e.getMessage(), e);
+            return false;
+        } catch (final MalformedJwtException e) {
+            log.debug("Malformed JWT: {}", e.getMessage(), e);
+            return false;
+        } catch (final IllegalArgumentException e) {
+            log.debug("Invalid token: {}", e.getMessage(), e);
             return false;
         }
     }
 
-    private Boolean isTokenExpired(String token) {
+    private Boolean isTokenExpired(final String token) {
         try {
             return extractExpiration(token).before(new Date());
         } catch (ExpiredJwtException e) {
@@ -79,11 +91,11 @@ public class JwtService {
         }
     }
 
-    private Date extractExpiration(String token) {
+    private Date extractExpiration(final String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    private Claims extractAllClaims(String token) throws ExpiredJwtException {
+    private Claims extractAllClaims(final String token) throws ExpiredJwtException {
         return Jwts.parser()
                 .verifyWith(getSignInKey())
                 .build()
@@ -92,7 +104,7 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecretKey());
+        final byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

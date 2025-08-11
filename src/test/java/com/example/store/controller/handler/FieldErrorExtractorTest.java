@@ -1,6 +1,9 @@
 package com.example.store.controller.handler;
 
 import com.example.store.dto.error.ViolationDTO;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,14 +18,17 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -44,7 +50,7 @@ class FieldErrorExtractorTest {
     @BeforeEach
     void setUp() {
         locale = Locale.getDefault();
-        fieldErrorExtractor = new FieldErrorExtractor(messageSource, locale);
+        fieldErrorExtractor = new FieldErrorExtractor(messageSource);
     }
 
     @Nested
@@ -170,8 +176,8 @@ class FieldErrorExtractorTest {
             
             List<FieldError> fieldErrors = new ArrayList<>();
             fieldErrors.add(fieldError);
-            
-            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(locale)))
+
+            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault())))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -183,7 +189,7 @@ class FieldErrorExtractorTest {
             assertEquals(field, result.get(0).getField());
             assertEquals(rejectedValue, result.get(0).getRejectedValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
-            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(locale));
+            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault()));
         }
     }
 
@@ -342,8 +348,8 @@ class FieldErrorExtractorTest {
             
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
             doReturn(errors).when(exception).getAllErrors();
-            
-            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(locale)))
+
+            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault())))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -355,7 +361,109 @@ class FieldErrorExtractorTest {
             assertEquals("global", result.get(0).getField());
             assertEquals("null", result.get(0).getRejectedValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
-            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(locale));
+            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault()));
+        }
+    }
+
+    @Nested
+    @DisplayName("When extracting error objects from ConstraintViolationException")
+    class WhenExtractingErrorObjectsFromConstraintViolationException {
+
+        @Test
+        @DisplayName("Then correctly map constraint violations to violation DTOs")
+        void thenCorrectlyMapConstraintViolationsToViolationDTOs() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+            String message = "Name is invalid";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(message);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(message, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null invalid value")
+        void thenHandleNullInvalidValue() {
+            // Given
+            String field = "name";
+            String message = "Name is required";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(null);
+            when(violation.getMessage()).thenReturn(message);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals("", result.get(0).getRejectedValue());
+            assertEquals(message, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then resolve message from MessageSource for global error codes")
+        void thenResolveMessageFromMessageSourceForGlobalErrorCodes() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+            String errorCode = "global.400.001";
+            String resolvedMessage = "Validation failed. Please check your input.";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+            verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), eq(errorCode), eq(Locale.getDefault()));
         }
     }
 }

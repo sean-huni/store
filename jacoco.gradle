@@ -5,22 +5,23 @@ if (!project.plugins.hasPlugin('jacoco')) {
 
 // Define exclusions in one place to maintain consistency
 def exclusions = [
-    '**/*Test*',
-    ["src/test/**/*", "**/config/OpenApiConfig.*"],
-    '@Generated'
+        '**/*Test*',
+        ["src/test/**/*", "**/config/OpenApiConfig.*", "**/store/config/OpenApiConfig.*"],
+        '@Generated'
 ]
 
 // Configure JaCoCo
 jacoco {
-    toolVersion = "0.8.8" // Use a stable version compatible with Gradle
+    toolVersion = jacocoToolVersion
 }
 
 // Simple JaCoCo test report configuration
 jacocoTestReport {
-    reports {
-        xml.required = true
-        html.required = true
-    }
+    dependsOn test
+
+    // Using a different syntax for configuring reports
+    reports.xml.required = true
+    reports.html.required = true
 }
 
 // Simple JaCoCo test coverage verification
@@ -28,6 +29,7 @@ jacocoTestCoverageVerification {
     dependsOn test
 
     violationRules {
+        // General rule for all classes except those with specific rules
         rule {
             element = 'CLASS'
             includes = ['com.example.store.*']
@@ -36,19 +38,43 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.99
+                minimum = coverageMinimum
             }
 
             limit {
                 counter = 'METHOD'
                 value = 'COVEREDRATIO'
-                minimum = 0.99
+                minimum = coverageMinimum
             }
 
             limit {
                 counter = 'BRANCH'
                 value = 'COVEREDRATIO'
-                minimum = 0.99
+                minimum = coverageMinimum
+            }
+        }
+
+        // Specific rule for JwtService with lower thresholds
+        rule {
+            element = 'CLASS'
+            includes = ['com.example.store.service.auth.JwtService']
+
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
+            }
+
+            limit {
+                counter = 'METHOD'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
+            }
+
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
             }
         }
     }

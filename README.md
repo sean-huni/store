@@ -108,6 +108,7 @@ Feel free to refactor the codebase if necessary. Bad choices were deliberately m
 
 # Executing the DevOps pipeline
 
+- Using SDKMan for Dev Env: `sdk i java 24.0.2-graalce && sdk env init && sdk env`
 - `docker compose -f src/test/resources/dc/test-tools.yml down -v --remove-orphans && docker compose -f src/test/resources/dc/test-tools.yml up -d`
 - Execute sonarqube analysis with the following command:
 `./gradlew sonar -Dsonar.projectKey=Equal-Experts -Dsonar.projectName='Equal-Experts' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_eafffb588bf1d4d9b2c5c6f350254a70bb11793f`

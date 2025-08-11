@@ -46,18 +46,18 @@ class StoreApplicationUnitTest {
     @DisplayName("Main method runs without errors when SpringApplication is mocked")
     void mainMethodRunsWithoutErrorsWithMockedSpringApplication() {
         // Use mockito to mock the static SpringApplication.run method
-        try (var mockedSpringApplication = mockStatic(SpringApplication.class)) {
+        try (final var mockedSpringApp = mockStatic(SpringApplication.class)) {
             // Configure the mock to return a mock ConfigurableApplicationContext
-            mockedSpringApplication.when(() ->
-                            SpringApplication.run(any(Class.class), any(String[].class)))
+            mockedSpringApp
+                    .when(() -> SpringApplication.run(any(Class.class), any(String[].class)))
                     .thenReturn(null);
 
             // Create a mock of the arguments
-            String[] args = new String[0];
+            final String[] args = new String[0];
 
             // Redirect System.out to avoid console output during tests
-            PrintStream originalOut = System.out;
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            final PrintStream originalOut = System.out;
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             System.setOut(new PrintStream(outputStream));
 
             try {
@@ -69,8 +69,7 @@ class StoreApplicationUnitTest {
             }
 
             // Verify that SpringApplication.run was called
-            mockedSpringApplication.verify(() ->
-                    SpringApplication.run(StoreApplication.class, args));
+            mockedSpringApp.verify(() -> SpringApplication.run(StoreApplication.class, args));
         }
     }
 }

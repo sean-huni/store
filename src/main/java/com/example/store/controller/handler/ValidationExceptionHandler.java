@@ -5,7 +5,9 @@ import com.example.store.dto.error.ViolationDTO;
 import com.example.store.exception.CustomerNotFoundException;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
+import com.example.store.exception.LocalizedJsonParseException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
@@ -20,27 +22,21 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.example.store.constant.AppConstant.GLOBAL_ERROR_MSG_PREFIX;
-
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class ValidationExceptionHandler {
     private static final String GLOBAL_ERROR_CODE = "global.400.000";
-    private static final Locale locale = Locale.getDefault();
-    private final MessageSource messageSource;
     private static final Pattern QUOTED_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"");
 
-
-    public ValidationExceptionHandler(final MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
+    private final MessageSource messageSource;
+    private final FieldErrorExtractor fieldErrorExtractor;
 
     /**
      * Extracts text inside double quotes from a message.
@@ -79,8 +75,8 @@ public class ValidationExceptionHandler {
         final String errorMessage = extractQuotedText(rawErrorMessage);
         log.error(errorMessage, invalidException);
 
-        // Extract violationDTOS from the validation exception using FieldErrorExtractor with MessageSource
-        final List<ViolationDTO> violationDTOS = new FieldErrorExtractor(messageSource, locale).extractErrorObjects(invalidException);
+        // Extract violationDTOS from the validation exception using FieldErrorExtractor
+        final List<ViolationDTO> violationDTOS = fieldErrorExtractor.extractErrorObjects(invalidException);
 
         return new ErrorDTO(null, errorMessage, violationDTOS, ZonedDateTime.now());
     }
@@ -98,8 +94,8 @@ public class ValidationExceptionHandler {
         final String rawErrorMessage = invalidException.getMessage();
         final String errorMessage = extractQuotedText(rawErrorMessage);
 
-        // Extract violationDTOS from the validation exception using FieldErrorExtractor with MessageSource
-        final List<ViolationDTO> violationDTOS = new FieldErrorExtractor(messageSource, locale)
+        // Extract violationDTOS from the validation exception using FieldErrorExtractor
+        final List<ViolationDTO> violationDTOS = fieldErrorExtractor
                 .extractErrorObjects(invalidException.getBindingResult().getFieldErrors());
         return new ErrorDTO(null, errorMessage, violationDTOS, ZonedDateTime.now());
     }
@@ -116,25 +112,13 @@ public class ValidationExceptionHandler {
     ErrorDTO handleConstraintViolationException(final ConstraintViolationException ex) {
         log.error("Validation error", ex);
 
-        List<ViolationDTO> violations = new ArrayList<>();
-        ex.getConstraintViolations().forEach(violation -> {
-            ViolationDTO violationDTO = new ViolationDTO();
-            violationDTO.setField(violation.getPropertyPath().toString());
-            violationDTO.setRejectedValue(violation.getInvalidValue() != null ?
-                    violation.getInvalidValue().toString() : "");
+        // Extract violationDTOS from the constraint violation exception using FieldErrorExtractor
+        final List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
 
-            // Resolve the message using MessageSource if it's a global message code
-            String message = violation.getMessage();
-            if (message != null && message.startsWith(GLOBAL_ERROR_MSG_PREFIX)) {
-                violationDTO.setErrMsg(messageSource.getMessage(message, null, message, locale));
-            } else {
-                violationDTO.setErrMsg(message);
-            }
+        // Extract the message from the message source
+        final String errorMessage = messageSource.getMessage("global.400.001", null, "Validation failed", Locale.getDefault());
 
-            violations.add(violationDTO);
-        });
-
-        return new ErrorDTO(HttpStatus.BAD_REQUEST.name(), "Validation failed", violations, ZonedDateTime.now());
+        return new ErrorDTO(HttpStatus.BAD_REQUEST.name(), errorMessage, violations, ZonedDateTime.now());
     }
 
     /**
@@ -150,7 +134,7 @@ public class ValidationExceptionHandler {
         log.error("CustomerNotFoundException", ex);
 
         // Extract the message from the message source using the GLOBAL_ERROR_CODE
-        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), locale);
+        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), Locale.getDefault());
 
         final ErrorDTO errorDTO = new ErrorDTO(HttpStatus.NOT_FOUND.name(), errorMessage, null, ZonedDateTime.now());
 
@@ -170,7 +154,7 @@ public class ValidationExceptionHandler {
         log.error("Unexpected error occurred", ex);
 
         // Extract the message from the message source using the GLOBAL_ERROR_CODE
-        final String errorMessage = messageSource.getMessage(GLOBAL_ERROR_CODE, null, GLOBAL_ERROR_CODE, locale);
+        final String errorMessage = messageSource.getMessage(GLOBAL_ERROR_CODE, null, GLOBAL_ERROR_CODE, Locale.getDefault());
 
         return new ErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR.name(), errorMessage, null, ZonedDateTime.now());
     }
@@ -196,8 +180,8 @@ public class ValidationExceptionHandler {
         log.error("Invalid refresh token", ex);
 
         // Extract the message from the message source using the error code
-        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), locale);
-        
+        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), Locale.getDefault());
+
         return new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
                 errorMessage,
@@ -211,9 +195,13 @@ public class ValidationExceptionHandler {
     @ResponseBody
     public ErrorDTO handleBadCredentialsException(final BadCredentialsException ex) {
         log.error("Bad credentials", ex);
+
+        // Extract the message from the message source
+        final String errorMessage = messageSource.getMessage("auth.400.008", null, "Invalid email or password", Locale.getDefault());
+        
         return new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
-                "Invalid email or password",
+                errorMessage,
                 null,
                 ZonedDateTime.now()
         );
@@ -224,9 +212,13 @@ public class ValidationExceptionHandler {
     @ResponseBody
     public ErrorDTO handleUsernameNotFoundException(final UsernameNotFoundException ex) {
         log.error("Username not found", ex);
+
+        // Extract the message from the message source
+        final String errorMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
+        
         return new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
-                "User not found",
+                errorMessage,
                 null,
                 ZonedDateTime.now()
         );
@@ -251,12 +243,40 @@ public class ValidationExceptionHandler {
         if ("sortDir".equals(ex.getName()) && ex.getRequiredType() != null &&
                 ex.getRequiredType().isEnum()) {
             // Use the specific error message for sortDir
-            errorMessage = messageSource.getMessage("global.400.009", null, "Invalid sort direction", locale);
+            errorMessage = messageSource.getMessage("global.400.009", null, "Invalid sort direction", Locale.getDefault());
         } else {
             // Generic error for other type mismatches
-            errorMessage = String.format("Parameter '%s' has invalid value: '%s'",
-                    ex.getName(), ex.getValue());
+            errorMessage = messageSource.getMessage("global.400.010", new Object[]{ex.getName(), ex.getValue()}, "Parameter '" + ex.getName() + "' has invalid value: '" + ex.getValue() + "'", Locale.getDefault());
         }
+
+        return new ErrorDTO(
+                HttpStatus.BAD_REQUEST.name(),
+                errorMessage,
+                null,
+                ZonedDateTime.now()
+        );
+    }
+
+    /**
+     * Handles LocalizedJsonParseException which occurs when parsing JSON fails.
+     * This exception contains a message key and arguments for localization.
+     *
+     * @param ex the exception to handle
+     * @return a {@link ErrorDTO} containing error details
+     */
+    @ExceptionHandler(LocalizedJsonParseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleLocalizedJsonParseException(final LocalizedJsonParseException ex) {
+        log.error("JSON parse error: {}", ex.getMessage(), ex);
+
+        // Extract the message from the message source using the message key and arguments from the exception
+        final String errorMessage = messageSource.getMessage(
+                ex.getMessageKey(),
+                ex.getArgs(),
+                ex.getMessage(), // Use the exception's message as fallback
+                Locale.getDefault()
+        );
 
         return new ErrorDTO(
                 HttpStatus.BAD_REQUEST.name(),
