@@ -1,3 +1,16 @@
+# Performance enhancements
+server.compression:
+  enabled: true
+  mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript
+  min-response-size: 1KB
+
+---
+
+spring:
+  threads:
+    virtual:
+      enabled: true # Performance enhancements
+---
 spring:
   docker:
     compose:
@@ -12,6 +25,12 @@ spring:
         default_batch_fetch_size: 10
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  datasource:
+    hikari:
+      auto-commit: true
+      connection-timeout: 2000
+      minimum-idle: 5
+      maximum-pool-size: 65
 
 ---
 global:

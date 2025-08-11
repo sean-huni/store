@@ -35,16 +35,14 @@ class GsonConfigTest {
     @Test
     void testZonedDateTimeSerialization() {
         // Given
-        ZonedDateTime now = ZonedDateTime.now();
-        List<ViolationDTO> violations = Collections.singletonList(
-                new ViolationDTO("field1", "value1", "Error message")
-        );
-        ErrorDTO errorDTO = new ErrorDTO("Error", "An error occurred", violations, now);
+        final ZonedDateTime now = ZonedDateTime.now();
+        final List<ViolationDTO> violations = Collections.singletonList(new ViolationDTO("field1", "value1", "Error message"));
+        final ErrorDTO errorDTO = new ErrorDTO("Error", "An error occurred", violations, now);
 
         // When
-        String json = gson.toJson(errorDTO);
+        final String json = gson.toJson(errorDTO);
         System.out.println("Serialized ErrorDTO JSON: " + json);
-        ErrorDTO deserializedErrorDTO = gson.fromJson(json, ErrorDTO.class);
+        final ErrorDTO deserializedErrorDTO = gson.fromJson(json, ErrorDTO.class);
 
         // Then
         assertNotNull(json);
@@ -52,7 +50,7 @@ class GsonConfigTest {
         assertEquals(errorDTO.getName(), deserializedErrorDTO.getName());
         assertEquals(errorDTO.getMessage(), deserializedErrorDTO.getMessage());
         assertEquals(errorDTO.getViolations().size(), deserializedErrorDTO.getViolations().size());
-        
+
         // Compare the timestamps - they should be equal after serialization and deserialization
         // We're comparing the string representation because ZonedDateTime equality can be tricky
         assertEquals(
@@ -60,7 +58,7 @@ class GsonConfigTest {
                 deserializedErrorDTO.getTimestamp().format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
         );
     }
-    
+
     @Test
     void testAbstractSuperDTOSerialization() {
         // Given
@@ -68,22 +66,22 @@ class GsonConfigTest {
         customerDTO.setId(1L);
         customerDTO.setName("Test Customer");
         customerDTO.setOrders(new HashSet<>());
-        
+
         ZonedDateTime now = ZonedDateTime.now();
         customerDTO.setCreated(now);
         customerDTO.setUpdated(now);
-        
+
         // When
         String json = gson.toJson(customerDTO);
         System.out.println("Serialized CustomerDTO JSON: " + json);
         CustomerDTO deserializedCustomerDTO = gson.fromJson(json, CustomerDTO.class);
-        
+
         // Then
         assertNotNull(json);
         assertNotNull(deserializedCustomerDTO);
         assertEquals(customerDTO.getId(), deserializedCustomerDTO.getId());
         assertEquals(customerDTO.getName(), deserializedCustomerDTO.getName());
-        
+
         // Compare the timestamps - they should be equal after serialization and deserialization
         assertEquals(
                 customerDTO.getCreated().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),

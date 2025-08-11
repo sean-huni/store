@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -15,12 +16,14 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.Locale;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final Gson gson;
+    private final MessageSource messageSource;
 
     @Override
     public void commence(final HttpServletRequest request,
@@ -32,9 +35,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
+        final String errorMessage = messageSource.getMessage("auth.400.012", null, "Full authentication is required to access this resource", Locale.getDefault());
+       
        final ErrorDTO errorDTO = new ErrorDTO(
                 HttpStatus.UNAUTHORIZED.name(),
-                "Full authentication is required to access this resource",
+               errorMessage,
                 null,
                 ZonedDateTime.now()
         );

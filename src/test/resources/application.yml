@@ -1,6 +1,14 @@
+# Performance enhancements
+server.compression:
+  enabled: true
+  mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript
+  min-response-size: 1KB
 
-
+---
 spring:
+  threads:
+    virtual:
+      enabled: true # Performance enhancements
   docker:
     compose:
       file: src/test/resources/dc/test-tools.yml

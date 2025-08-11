@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,8 +23,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import java.io.IOException;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -173,5 +176,30 @@ class JwtAuthenticationFilterTest {
         // Then
         verify(filterChain).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    @DisplayName("Should skip authentication when SecurityContext already has authentication")
+    void shouldSkipAuthenticationWhenSecurityContextAlreadyHasAuthentication() throws ServletException, IOException {
+        // Given
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(jwtService.extractUsername(validToken)).thenReturn(email);
+
+        // Set up an existing authentication in the security context
+        UsernamePasswordAuthenticationToken existingAuth = new UsernamePasswordAuthenticationToken(
+                "existing-user", null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(existingAuth);
+
+        // When
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Then
+        verify(filterChain).doFilter(request, response);
+        verify(jwtService).extractUsername(validToken);
+        // Should not load user details or validate token when authentication already exists
+        verify(userDetailsService, never()).loadUserByUsername(anyString());
+        verify(jwtService, never()).isTokenValid(anyString(), any(UserDetails.class));
+        // The existing authentication should still be in the context
+        assertEquals(existingAuth, SecurityContextHolder.getContext().getAuthentication());
     }
 }

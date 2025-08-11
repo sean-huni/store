@@ -18,12 +18,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,6 +56,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtProperties jwtProperties;
+
+    @Mock
+    private MessageSource messageSource;
 
     @InjectMocks
     private AuthService authService;
@@ -91,6 +96,24 @@ class AuthServiceTest {
 
         // Setup JWT properties with lenient stubbing to avoid unnecessary stubbing warnings
         lenient().when(jwtProperties.getExpiration()).thenReturn(expiration);
+
+        // Setup MessageSource with lenient stubbing for common messages
+        lenient().when(messageSource.getMessage(any(), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    String key = invocation.getArgument(0);
+                    Object[] args = invocation.getArgument(1);
+                    String defaultMessage = invocation.getArgument(2);
+
+                    if ("auth.400.008".equals(key)) {
+                        return "Invalid email or password";
+                    } else if ("auth.400.009".equals(key)) {
+                        return "User not found";
+                    } else if ("auth.400.011".equals(key) && args != null && args.length > 0) {
+                        return "Email already registered: " + args[0];
+                    } else {
+                        return defaultMessage;
+                    }
+                });
     }
 
     @Test
@@ -259,7 +282,9 @@ class AuthServiceTest {
                 () -> authService.refreshToken(refreshTokenReqDTO)
         );
 
-        assertEquals("User not found", exception.getMessage());
+        // Verify the exception message matches what would be returned by the MessageSource
+        String expectedMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     @Test

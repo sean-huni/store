@@ -31,7 +31,10 @@ public interface OrderMapper {
         }
 
         return productOrders.stream()
-                .map(po -> po.getProduct().getId())
+                .filter(po -> po.getProduct() != null)
+                .map(po -> po.getProduct())
+                .filter(product -> product.getId() != null)
+                .map(product -> product.getId())
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

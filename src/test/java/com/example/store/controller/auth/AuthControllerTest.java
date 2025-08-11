@@ -1,6 +1,7 @@
 package com.example.store.controller.auth;
 
 import com.example.store.config.security.JwtProperties;
+import com.example.store.controller.handler.FieldErrorExtractor;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.dto.auth.req.RefreshTokenReqDTO;
 import com.example.store.dto.auth.req.RegReqDTO;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,6 +51,12 @@ class AuthControllerTest {
 
     @MockBean
     private JwtProperties jwtProperties;
+
+    @MockBean
+    private FieldErrorExtractor fieldErrorExtractor;
+
+    @MockBean
+    private MessageSource messageSource;
 
     private AuthRespDTO authRespDTO;
 

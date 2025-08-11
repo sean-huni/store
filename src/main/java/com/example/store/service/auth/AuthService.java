@@ -11,6 +11,7 @@ import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -28,6 +31,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final JwtProperties jwtProperties;
+    private final MessageSource messageSource;
     private final String TOKEN_TYPE = "Bearer";
 
     @Transactional
@@ -36,7 +40,8 @@ public class AuthService {
 
         // Check if user already exists
         if (userRepo.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException("Email already registered: %s".formatted(request.email()));
+            final String errorMessage = messageSource.getMessage("auth.400.011", new Object[]{request.email()}, "Email already registered: " + request.email(), Locale.getDefault());
+            throw new EmailAlreadyExistsException(errorMessage);
         }
 
         // Create new user
@@ -81,11 +86,13 @@ public class AuthService {
             );
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", request.email());
-            throw new BadCredentialsException("Invalid email or password");
+            final String errorMessage = messageSource.getMessage("auth.400.008", null, "Invalid email or password", Locale.getDefault());
+            throw new BadCredentialsException(errorMessage);
         }
 
+        final String userNotFoundMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
         User user = userRepo.findByEmail(request.email())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException(userNotFoundMessage));
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
@@ -111,10 +118,11 @@ public class AuthService {
                 throw new InvalidRefreshTokenException("auth.400.006");
             }
 
+            final String userNotFoundMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
             final User user = userRepo.findByEmail(userEmail)
                     .orElseThrow(() -> {
                         log.error("Error refreshing token: User not found");
-                        return new UsernameNotFoundException("User not found");
+                        return new UsernameNotFoundException(userNotFoundMessage);
                     });
 
             if (!jwtService.isTokenValid(refreshToken, user)) {
