@@ -4,14 +4,14 @@ server.compression:
   mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript
   min-response-size: 1KB
 
----
 
+---
 spring:
   threads:
     virtual:
-      enabled: true # Performance enhancements
----
-spring:
+      enabled: true # Performance enhancements when platform thread is freed while the virtual thread parks. This improves scalability for blocking workloads.
+  main:
+    lazy-initialization: true # Performance enhancements for Lazy-Init by - reducing startup time by deferring bean instantiation; it can increase first-use latency and defer errors to runtime
   docker:
     compose:
       file: src/main/resources/dc/dev-env.yml
