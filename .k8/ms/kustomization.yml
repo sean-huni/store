@@ -1,0 +1,25 @@
+### ms/kustomization.yml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: backend
+
+resources:
+  - 00-namespace.yml # Create the backend namespace first
+  - 01-configmap.yml
+  - 02-secret.yml # Contains database credentials
+  - 03-service.yml
+  - 04-deployment.yml  # Updated filename
+  - 05-postgres-ca-secret.yml # CA certificate for CockroachDB
+  - 06-postgres-client-secret.yml # Client certificate for CockroachDB
+
+secretGenerator:
+  - name: docker-reg-secret
+    type: kubernetes.io/dockerconfigjson
+    files:
+      - .dockerconfigjson=../docker-config.json
+
+labels:
+  - pairs:
+      environment: production
+      tier: backend

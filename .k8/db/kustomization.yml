@@ -1,0 +1,25 @@
+### db/kustomization.yml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: database
+
+resources:
+  - 00-namespace.yml
+  - 01-rbac.yml
+  - 02-configmap.yml
+  - 03-service.yml
+  - 04-cert-manager.yml  # Add cert-manager resources
+  - 05-statefulset-secure.yml  # Use secure version
+  - 06-init-job-secure.yml  # Use secure version
+
+secretGenerator:
+  - name: docker-reg-secret
+    type: kubernetes.io/dockerconfigjson
+    files:
+      - .dockerconfigjson=../docker-config.json
+
+labels:
+  - pairs:
+      environment: production
+      tier: database

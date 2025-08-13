@@ -5,8 +5,8 @@ if (!project.plugins.hasPlugin('jacoco')) {
 
 // Define exclusions in one place to maintain consistency
 def exclusions = [
+        '**/*test*',
         '**/*Test*',
-        ["src/test/**/*", "**/config/OpenApiConfig.*", "**/store/config/OpenApiConfig.*"],
         '@Generated'
 ]
 
@@ -62,19 +62,19 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.95
+                minimum = 0.98
             }
 
             limit {
                 counter = 'METHOD'
                 value = 'COVEREDRATIO'
-                minimum = 0.95
+                minimum = 0.98
             }
 
             limit {
                 counter = 'BRANCH'
                 value = 'COVEREDRATIO'
-                minimum = 0.95
+                minimum = 0.98
             }
         }
     }
