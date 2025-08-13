@@ -16,14 +16,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 
 @Tag("unit")
-@DisplayName("StoreApplication Unit Tests")
-class StoreApplicationUnitTest {
+@DisplayName("StoreApp - {Unit}")
+class StoreAppUnitTest {
 
     @Test
-    @DisplayName("StoreApplication can be instantiated")
+    @DisplayName("StoreApp can be instantiated")
     void canCreateStoreApplicationInstance() {
         // This test ensures the constructor is covered
-        StoreApplication application = new StoreApplication();
+        StoreApp application = new StoreApp();
         assertNotNull(application);
     }
 
@@ -32,7 +32,7 @@ class StoreApplicationUnitTest {
     void mainMethodExistsWithCorrectSignature() {
         try {
             // Get the main method using reflection
-            Class<?> clazz = StoreApplication.class;
+            Class<?> clazz = StoreApp.class;
             Method mainMethod = clazz.getMethod("main", String[].class);
 
             // If we get here, the method exists with the correct signature
@@ -62,14 +62,14 @@ class StoreApplicationUnitTest {
 
             try {
                 // Call the main method directly to ensure code coverage
-                assertDoesNotThrow(() -> StoreApplication.main(args));
+                assertDoesNotThrow(() -> StoreApp.main(args));
             } finally {
                 // Restore the original System.out
                 System.setOut(originalOut);
             }
 
             // Verify that SpringApplication.run was called
-            mockedSpringApp.verify(() -> SpringApplication.run(StoreApplication.class, args));
+            mockedSpringApp.verify(() -> SpringApplication.run(StoreApp.class, args));
         }
     }
 }

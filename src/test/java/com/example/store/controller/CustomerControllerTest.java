@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("Unit Test - CustomerController")
+@DisplayName("CustomerController - {Unit}")
 @ExtendWith(MockitoExtension.class)
 class CustomerControllerTest {
 

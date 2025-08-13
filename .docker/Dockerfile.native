@@ -1,0 +1,63 @@
+# Dockerfile for GraalVM native build
+# Based on GraalVM CE 24.0.2 as specified in .sdkmanrc
+
+# Build stage
+FROM ghcr.io/graalvm/graalvm-community:24.0.2 AS builder
+
+WORKDIR /app
+
+# Copy the Gradle wrapper, settings, and build files
+COPY gradlew .
+COPY gradle gradle
+COPY settings.gradle .
+COPY build.gradle .
+COPY jacoco.gradle .
+
+# Copy the source code
+COPY src src
+
+# Set memory options for the JVM running Gradle
+ENV JAVA_OPTS="-Xmx12g -XX:MaxMetaspaceSize=2g"
+
+# Make gradlew executable
+RUN chmod +x ./gradlew
+
+# Build the native image
+RUN ./gradlew nativeCompile \
+    -Porg.gradle.java.installations.auto-download=false \
+    -Dspring.native.mode=reflection \
+    -Dspring.native.verbose=true \
+    -Dorg.gradle.jvmargs="-Xmx12g -XX:MaxMetaspaceSize=2g" \
+    -Dorg.gradle.workers.max=2 \
+    -Dorg.gradle.parallel=false \
+    -Dorg.graalvm.nativeimage.imagecode=1 \
+    -Dorg.graalvm.nativeimage.native-image-args="--gc=epsilon -Xmx1g -Xms1g" \
+    --no-daemon
+
+# Runtime stage
+FROM alpine:3.19
+
+WORKDIR /app
+
+# Set timezone
+ENV TZ=Africa/Johannesburg
+
+# Install minimal dependencies required for the native executable
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache tzdata libc6-compat && \
+    # Set the timezone
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo "$TZ" > /etc/timezone
+
+# Copy the native executable from the builder stage
+COPY --from=builder /app/build/native/nativeCompile/store /app/store
+
+# Make the executable runnable
+RUN chmod +x /app/store
+
+# Expose the application port
+EXPOSE 8080
+
+# Run the native executable
+ENTRYPOINT ["/app/store"]

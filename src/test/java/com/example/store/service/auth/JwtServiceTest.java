@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("JwtService Tests")
+@DisplayName("JwtService - {Unit}")
 class JwtServiceTest {
 
     @Mock

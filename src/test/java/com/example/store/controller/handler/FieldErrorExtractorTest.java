@@ -25,7 +25,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("Unit Test - FieldErrorExtractor")
+@DisplayName("FieldErrorExtractor - {Unit}")
 @ExtendWith(MockitoExtension.class)
 class FieldErrorExtractorTest {
 
@@ -71,6 +70,9 @@ class FieldErrorExtractorTest {
             List<FieldError> fieldErrors = new ArrayList<>();
             fieldErrors.add(fieldError);
 
+            // Note: "Name is invalid" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(fieldErrors);
 
@@ -78,7 +80,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
         }
 
@@ -95,6 +97,9 @@ class FieldErrorExtractorTest {
             List<FieldError> fieldErrors = new ArrayList<>();
             fieldErrors.add(fieldError);
 
+            // Note: "Name is required" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(fieldErrors);
 
@@ -102,7 +107,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals("", result.get(0).getRejectedValue());
+            assertEquals("null", result.get(0).getRjctValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
         }
 
@@ -126,8 +131,8 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
-            assertNull(result.get(0).getErrMsg());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
+            assertEquals("Validation failed", result.get(0).getErrMsg());
         }
 
         @Test
@@ -154,8 +159,8 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
-            assertNull(result.get(0).getErrMsg());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
+            assertEquals("Validation failed", result.get(0).getErrMsg());
 
             // Verify that getDefaultMessage was called, which means the code tried to check
             // if it starts with "global.400"
@@ -177,7 +182,7 @@ class FieldErrorExtractorTest {
             List<FieldError> fieldErrors = new ArrayList<>();
             fieldErrors.add(fieldError);
 
-            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault())))
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -187,9 +192,9 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
-            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault()));
+            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault()));
         }
     }
 
@@ -214,6 +219,9 @@ class FieldErrorExtractorTest {
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
             doReturn(errors).when(exception).getAllErrors();
 
+            // Note: "Name is invalid" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
 
@@ -221,7 +229,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
         }
 
@@ -241,6 +249,9 @@ class FieldErrorExtractorTest {
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
             doReturn(errors).when(exception).getAllErrors();
 
+            // Note: "Name is required" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
 
@@ -248,7 +259,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals("", result.get(0).getRejectedValue());
+            assertEquals("null", result.get(0).getRjctValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
         }
 
@@ -266,6 +277,9 @@ class FieldErrorExtractorTest {
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
             doReturn(errors).when(exception).getAllErrors();
 
+            // Note: "Validation failed" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
 
@@ -273,7 +287,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("global", result.get(0).getField());
-            assertEquals("null", result.get(0).getRejectedValue());
+            assertEquals("null", result.get(0).getRjctValue());
             assertEquals(defaultMessage, result.get(0).getErrMsg());
         }
 
@@ -298,8 +312,8 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("global", result.get(0).getField());
-            assertEquals("null", result.get(0).getRejectedValue());
-            assertNull(result.get(0).getErrMsg());
+            assertEquals("null", result.get(0).getRjctValue());
+            assertEquals("Validation failed", result.get(0).getErrMsg());
 
             // Verify that getDefaultMessage was called
             verify(objectError, times(1)).getDefaultMessage();
@@ -326,8 +340,8 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("global", result.get(0).getField());
-            assertEquals("null", result.get(0).getRejectedValue());
-            assertNull(result.get(0).getErrMsg());
+            assertEquals("null", result.get(0).getRjctValue());
+            assertEquals("Validation failed", result.get(0).getErrMsg());
 
             // Verify that getDefaultMessage was called, which means the code tried to check
             // if it starts with "global.400"
@@ -349,7 +363,7 @@ class FieldErrorExtractorTest {
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
             doReturn(errors).when(exception).getAllErrors();
 
-            when(messageSource.getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault())))
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -359,9 +373,9 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("global", result.get(0).getField());
-            assertEquals("null", result.get(0).getRejectedValue());
+            assertEquals("null", result.get(0).getRjctValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
-            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), eq(errorCode), eq(Locale.getDefault()));
+            verify(messageSource, times(1)).getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault()));
         }
     }
 
@@ -389,6 +403,9 @@ class FieldErrorExtractorTest {
 
             ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
+            // Note: "Name is invalid" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
 
@@ -396,7 +413,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
             assertEquals(message, result.get(0).getErrMsg());
         }
 
@@ -419,6 +436,9 @@ class FieldErrorExtractorTest {
 
             ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
+            // Note: "Name is required" is not a message key (contains spaces), 
+            // so messageSource.getMessage() won't be called
+
             // When
             List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
 
@@ -426,7 +446,7 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals("", result.get(0).getRejectedValue());
+            assertEquals("null", result.get(0).getRjctValue());
             assertEquals(message, result.get(0).getErrMsg());
         }
 
@@ -451,7 +471,7 @@ class FieldErrorExtractorTest {
 
             ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
-            when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), eq(Locale.getDefault())))
+            when(messageSource.getMessage(eq(errorCode), isNull(), isNull(), eq(Locale.getDefault())))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -461,9 +481,56 @@ class FieldErrorExtractorTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRejectedValue());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
-            verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), eq(errorCode), eq(Locale.getDefault()));
+            verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), isNull(), eq(Locale.getDefault()));
+        }
+    }
+
+    @Nested
+    @DisplayName("When testing @Length validation for customer name")
+    class WhenTestingLengthValidationForCustomerName {
+
+        @Test
+        @DisplayName("Then extract error message with max length parameter")
+        void thenExtractErrorMessageWithMaxLengthParameter() {
+            // Given
+            String field = "name";
+            String rejectedValue = "A".repeat(226); // Exceeds max length of 225
+            String errorCode = "customer.400.001";
+            String resolvedMessage = "Invalid Customer Name. Name should be less/equal to 225 characters";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            // The extractConstraintArguments method is now defensive against null values
+            // so we don't need complex mocking - it will handle null constraint descriptors gracefully
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            // Mock the MessageSource to return the resolved message
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            // The rejected value gets truncated to 97 characters + "..." due to MAX_VALUE_LENGTH = 100
+            String expectedTruncatedValue = "A".repeat(97) + "...";
+            assertEquals(expectedTruncatedValue, result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+            verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), isNull(), eq(Locale.getDefault()));
         }
     }
 }

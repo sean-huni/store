@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Import(TestConfig.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
-@DisplayName("DB-Integration-Test - Given CustomerRepo")
+@DisplayName("CustomerRepo - {Int}")
 class CustomerRepoTest {
     @Autowired
     private CustomerRepo customerRepo;

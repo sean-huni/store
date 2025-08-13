@@ -2,8 +2,8 @@ package com.example.store.util;
 
 import com.example.store.dto.SortEnumDTO;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,10 +12,11 @@ import org.springframework.data.domain.Sort;
 
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("unit")
-@DisplayName("PageableBuilder Tests")
+@DisplayName("PageableBuilder - {Unit}")
 class PageableBuilderTest {
 
     private final PageableBuilder pageableBuilder = new PageableBuilder();

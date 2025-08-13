@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("unit")
-@DisplayName("Unit Test - CustomerMapper")
+@DisplayName("CustomerMapper - {Unit}")
 class CustomerMapperTest {
 
     private final CustomerMapper mapper = Mappers.getMapper(CustomerMapper.class);

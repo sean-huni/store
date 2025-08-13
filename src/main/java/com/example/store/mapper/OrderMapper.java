@@ -18,7 +18,6 @@ public interface OrderMapper {
     Order toOrder(OrderDTO orderDTO);
 
     @Mapping(target = "customerId", source = "customer.id")
-    @Mapping(target = "customer.orders", ignore = true)
     @Mapping(target = "productIds", expression = "java(mapProductOrdersToProductIds(order.getProducts()))")
     OrderDTO toOrderDTO(Order order);
 

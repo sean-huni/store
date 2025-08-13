@@ -1,11 +1,12 @@
 package com.example.store.integration.controller;
 
-import com.example.store.StoreApplication;
+import com.example.store.StoreApp;
 import com.example.store.dto.CustomerDTO;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.UserRepo;
@@ -38,10 +39,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = StoreApplication.class)
+@SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
-@DisplayName("Integration Test - CustomerController")
+@DisplayName("CustomerController - {Int}")
 @Transactional
 @Testcontainers
 @ActiveProfiles("int")
@@ -87,7 +88,7 @@ class CustomerControllerIntTest {
                 .lastName("User")
                 .email("test@example.com")
                 .password(passwordEncoder.encode("password"))
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
@@ -169,7 +170,7 @@ class CustomerControllerIntTest {
                             .header("Authorization", authToken))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
-                    .andExpect(jsonPath("$.violations[0].field").value("findCustomers.page"));
+                    .andExpect(jsonPath("$.violations[0].field").value("page"));
         }
 
         @Test
@@ -180,7 +181,7 @@ class CustomerControllerIntTest {
                             .header("Authorization", authToken))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
-                    .andExpect(jsonPath("$.violations[0].field").value("findCustomers.limit"));
+                    .andExpect(jsonPath("$.violations[0].field").value("limit"));
         }
 
         @Test

@@ -1,5 +1,6 @@
 package com.example.store.service.auth;
 
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,24 +54,24 @@ class CustomUserDetailsServiceTest {
     @DisplayName("Should load user by username when user exists")
     void shouldLoadUserByUsernameWhenUserExists() {
         // Given
-        String email = "user@example.com";
-        User user = User.builder()
+        final String email = "user@example.com";
+        final User user = User.builder()
                 .email(email)
                 .password("password")
                 .firstName("John")
                 .lastName("Doe")
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
                 .build();
-        
+
         when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
-        
+
         // When
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
         // Then
         assertEquals(email, userDetails.getUsername());
         assertEquals(user.getPassword(), userDetails.getPassword());
@@ -79,22 +80,22 @@ class CustomUserDetailsServiceTest {
         assertTrue(userDetails.isAccountNonLocked());
         assertTrue(userDetails.isCredentialsNonExpired());
     }
-    
+
     @Test
     @DisplayName("Should throw UsernameNotFoundException when user doesn't exist")
     void shouldThrowUsernameNotFoundExceptionWhenUserDoesntExist() {
         // Given
-        String email = "nonexistent@example.com";
+        final String email = "nonexistent@example.com";
         when(userRepo.findByEmail(email)).thenReturn(Optional.empty());
-        
+
         // When/Then
-        UsernameNotFoundException exception = assertThrows(
+        final UsernameNotFoundException exception = assertThrows(
                 UsernameNotFoundException.class,
                 () -> userDetailsService.loadUserByUsername(email)
         );
 
         // Verify the exception message matches what would be returned by the MessageSource
-        String expectedMessage = messageSource.getMessage("auth.400.010", new Object[]{email}, "User not found with email: " + email, Locale.getDefault());
+        final String expectedMessage = messageSource.getMessage("auth.400.010", new Object[]{email}, "User not found with email: " + email, Locale.getDefault());
         assertEquals(expectedMessage, exception.getMessage());
     }
 }

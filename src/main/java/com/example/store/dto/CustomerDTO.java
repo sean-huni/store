@@ -3,6 +3,7 @@ package com.example.store.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.validator.constraints.Length;
 
 import java.util.Set;
 
@@ -10,6 +11,7 @@ import java.util.Set;
 @Data
 public class CustomerDTO extends AbstractSuperDTO {
     @NotBlank(message = "global.400.001")
+    @Length(max = 225, message = "customer.400.001")
     private String name;
     private Set<Long> orders;
 }

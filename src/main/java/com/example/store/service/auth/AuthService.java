@@ -7,6 +7,7 @@ import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +41,7 @@ public class AuthService {
 
         // Check if user already exists
         if (userRepo.existsByEmail(request.email())) {
-            final String errorMessage = messageSource.getMessage("auth.400.011", new Object[]{request.email()}, "Email already registered: " + request.email(), Locale.getDefault());
-            throw new EmailAlreadyExistsException(errorMessage);
+            throw new EmailAlreadyExistsException("auth.400.011", new String[]{request.email()});
         }
 
         // Create new user
@@ -50,7 +50,7 @@ public class AuthService {
                 .lastName(request.lastName())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)

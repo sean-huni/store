@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("JwtAuthenticationFilter Tests")
+@DisplayName("JwtAuthenticationFilter - {Unit}")
 class JwtAuthenticationFilterTest {
 
     @Mock

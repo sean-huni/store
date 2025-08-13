@@ -35,7 +35,6 @@ public class CustomerController {
     private final PageableBuilder pageableBuilder;
 
     @GetMapping
-
     public List<CustomerDTO> findCustomers(
             @RequestParam(required = false) final String name,
             @RequestParam(required = false) @Min(value = 0, message = "global.400.006") final Integer page,

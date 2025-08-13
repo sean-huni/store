@@ -26,7 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("ZonedDateTimeBiSerializer Tests")
+@DisplayName("ZonedDateTimeBiSerializer - {Unit}")
 class ZonedDateTimeBiSerializerTest {
 
     private ZonedDateTimeBiSerializer serializer;

@@ -1,7 +1,6 @@
 package com.example.store.controller;
 
 import com.example.store.component.GlobalSearchProps;
-import com.example.store.dto.CustomerDTO;
 import com.example.store.dto.OrderDTO;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
@@ -11,6 +10,7 @@ import com.example.store.service.store.OrderService;
 import com.example.store.util.PageableBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -37,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit")
+@DisplayName("OrderController - {Unit}")
 class OrderControllerTests {
 
     private MockMvc mockMvc;
@@ -88,21 +90,20 @@ class OrderControllerTests {
     }
 
     @Test
+    @DisplayName("Should create order and return 201 status with customer details")
     void testCreateOrder() throws Exception {
         // Create OrderDTO with required fields
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setDescription("Test Order");
         orderDTO.setCustomerId(1L);
+        orderDTO.setProductIds(Set.of(1L, 2L));
         
         // Mock the service to return an OrderDTO with customer info
         OrderDTO returnedOrderDTO = new OrderDTO();
         returnedOrderDTO.setDescription("Test Order");
         returnedOrderDTO.setCustomerId(1L);
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setName("John Doe");
-        customerDTO.setId(1L);
-        returnedOrderDTO.setCustomer(customerDTO);
-        
+        returnedOrderDTO.setProductIds(Set.of(1L, 2L));
+
         when(orderService.createOrder(any(OrderDTO.class))).thenReturn(returnedOrderDTO);
 
         mockMvc.perform(post("/orders")
@@ -110,25 +111,23 @@ class OrderControllerTests {
                         .content(objectMapper.writeValueAsString(orderDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.description").value("Test Order"))
-                .andExpect(jsonPath("$.customer.name").value("John Doe"));
+                .andExpect(jsonPath("$.customerId").value(1L));
     }
 
     @Test
+    @DisplayName("Should return all orders with 200 status")
     void testGetOrder() throws Exception {
         // Create OrderDTO list to return from service
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setDescription("Test Order");
         orderDTO.setCustomerId(1L);
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setName("John Doe");
-        customerDTO.setId(1L);
-        orderDTO.setCustomer(customerDTO);
-        
+        orderDTO.setProductIds(Set.of(1L, 2L));
+
         when(orderService.findAllOrders(any())).thenReturn(List.of(orderDTO));
 
         mockMvc.perform(get("/orders"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].description").value("Test Order"))
-                .andExpect(jsonPath("$[0].customer.name").value("John Doe"));
+                .andExpect(jsonPath("$[0].customerId").value(1L));
     }
 }

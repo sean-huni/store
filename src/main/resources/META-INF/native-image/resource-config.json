@@ -1,0 +1,50 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "\\QMETA-INF/spring.factories\\E"
+      },
+      {
+        "pattern": "\\QMETA-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports\\E"
+      },
+      {
+        "pattern": "\\QMETA-INF/services/.*\\E"
+      },
+      {
+        "pattern": "\\Qapplication.properties\\E"
+      },
+      {
+        "pattern": "\\Qapplication.yml\\E"
+      },
+      {
+        "pattern": "\\Qapplication-.*\\.properties\\E"
+      },
+      {
+        "pattern": "\\Qapplication-.*\\.yml\\E"
+      },
+      {
+        "pattern": "\\Qdb/changelog/.*\\E"
+      },
+      {
+        "pattern": "\\Qi18n/.*\\E"
+      },
+      {
+        "pattern": "\\Qstatic/.*\\E"
+      },
+      {
+        "pattern": "\\Qtemplates/.*\\E"
+      },
+      {
+        "pattern": "\\Qschema.sql\\E"
+      },
+      {
+        "pattern": "\\Qdata.sql\\E"
+      }
+    ]
+  },
+  "bundles": [
+    {
+      "name": "messages"
+    }
+  ]
+}

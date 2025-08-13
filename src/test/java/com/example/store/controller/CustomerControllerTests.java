@@ -9,6 +9,7 @@ import com.example.store.service.store.CustomerService;
 import com.example.store.util.PageableBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit")
+@DisplayName("CustomerController - {Unit}")
 class CustomerControllerTests {
 
     private MockMvc mockMvc;
@@ -66,6 +68,7 @@ class CustomerControllerTests {
     }
 
     @Test
+    @DisplayName("Should create customer and return 201 status")
     void testCreateCustomer() throws Exception {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setName("John Doe");
@@ -80,6 +83,7 @@ class CustomerControllerTests {
     }
 
     @Test
+    @DisplayName("Should return all customers with 200 status")
     void testGetAllCustomers() throws Exception {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setName("John Doe");

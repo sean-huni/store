@@ -1,12 +1,13 @@
 package com.example.store.integration.controller;
 
-import com.example.store.StoreApplication;
+import com.example.store.StoreApp;
 import com.example.store.dto.OrderDTO;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = StoreApplication.class)
+@SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
 @DisplayName("Integration Test - OrderController Security")
@@ -93,7 +94,7 @@ class OrderControllerSecurityTest {
                 .lastName("User")
                 .email("test@example.com")
                 .password(passwordEncoder.encode("password"))
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
@@ -155,6 +156,7 @@ class OrderControllerSecurityTest {
         void thenReturn401WhenCreatingOrder() throws Exception {
             OrderDTO newOrder = new OrderDTO();
             newOrder.setCustomerId(testCustomer.getId());
+            newOrder.setProductIds(java.util.Set.of(1L));
 
             mockMvc.perform(post("/orders")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -192,6 +194,7 @@ class OrderControllerSecurityTest {
             OrderDTO newOrder = new OrderDTO();
             newOrder.setCustomerId(testCustomer.getId());
             newOrder.setDescription("New Test Order Description");
+            newOrder.setProductIds(java.util.Set.of(1L));
 
             mockMvc.perform(post("/orders")
                     .header("Authorization", authToken)

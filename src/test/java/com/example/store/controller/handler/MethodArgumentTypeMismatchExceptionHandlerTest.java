@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("Unit Test - MethodArgumentTypeMismatchException Handler")
+@DisplayName("MethodArgumentTypeMismatchExceptionHandler - {Unit}")
 @ExtendWith(MockitoExtension.class)
 class MethodArgumentTypeMismatchExceptionHandlerTest {
 
@@ -40,8 +40,8 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleMethodArgumentTypeMismatchException should create ErrorDTO with generic message for non-sortDir parameters")
-    void handleMethodArgumentTypeMismatchExceptionShouldCreateErrorDTOWithGenericMessageForNonSortDirParameters() {
+    @DisplayName("handleTypeMismatch should create ErrorDTO with generic message for non-sortDir parameters")
+    void handleTypeMismatchShouldCreateErrorDTOWithGenericMessageForNonSortDirParameters() {
         // Given
         String paramName = "page";
         String paramValue = "invalid";
@@ -57,7 +57,7 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
                 .thenReturn(expectedMessage);
 
         // When
-        ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+        ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
         // Then
         assertNotNull(result);
@@ -85,7 +85,7 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
                 .thenReturn(expectedMessage);
 
         // When
-        ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+        ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
         // Then
         assertNotNull(result);

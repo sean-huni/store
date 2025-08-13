@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ActiveProfiles("int")
 @Testcontainers
 @Import(IntTestConfig.class)
-@DisplayName("StoreApplication Tests")
-class StoreApplicationTest {
+@DisplayName("StoreApp - {Int}")
+class StoreAppTest {
 
     @Test
     @DisplayName("Context loads successfully")
@@ -28,10 +28,10 @@ class StoreApplicationTest {
     }
     
     @Test
-    @DisplayName("StoreApplication can be instantiated")
+    @DisplayName("StoreApp can be instantiated")
     void canCreateStoreApplicationInstance() {
         // This test ensures the constructor is covered
-        StoreApplication application = new StoreApplication();
+        StoreApp application = new StoreApp();
         assertNotNull(application);
     }
 }
