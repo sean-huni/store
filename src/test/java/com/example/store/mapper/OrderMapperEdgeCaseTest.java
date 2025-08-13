@@ -116,7 +116,6 @@ class OrderMapperEdgeCaseTest {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setId(101L);
         customerDTO.setName("Test Customer");
-        dto.setCustomer(customerDTO);
 
         dto.setProductIds(new HashSet<>());
 

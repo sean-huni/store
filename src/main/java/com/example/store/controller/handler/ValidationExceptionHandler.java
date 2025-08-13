@@ -10,6 +10,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,9 +23,9 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -32,6 +33,7 @@ import java.util.regex.Pattern;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class ValidationExceptionHandler {
+
     private static final String GLOBAL_ERROR_CODE = "global.400.000";
     private static final Pattern QUOTED_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"");
 
@@ -39,250 +41,229 @@ public class ValidationExceptionHandler {
     private final FieldErrorExtractor fieldErrorExtractor;
 
     /**
-     * Extracts text inside double quotes from a message.
-     * If no quoted text is found, returns the original message.
-     *
-     * @param message the message to extract quoted text from
-     * @return the text inside double quotes, or the original message if no quotes found
+     * Base exception handler that creates ErrorDTO with proper localization
      */
-    private String extractQuotedText(final String message) {
-        if (message == null) {
-            return null;
-        }
+    private ErrorDTO createErrorResponse(final HttpStatus status, final String messageKey,
+                                         final Object[] args, final String defaultMessage,
+                                         final List<ViolationDTO> violations) {
+        final ErrorDTO errorDTO = new ErrorDTO();
 
-        final Matcher matcher = QUOTED_TEXT_PATTERN.matcher(message);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
+        // Set the name to the status name (e.g., "BAD_REQUEST")
+        errorDTO.setName(status.name());
 
-        return message;
-    }
+        // Resolve the message using the messageKey and args
+        final Locale locale = LocaleContextHolder.getLocale();
+        final String message = messageKey != null
+                ? messageSource.getMessage(messageKey, args, defaultMessage, locale)
+                : defaultMessage;
 
-    /**
-     * Handles HandlerMethodValidationException which occurs when method parameter validation fails.
-     *
-     * @param invalidException the exception to handle
-     * @return a ResponseEntity containing error details
-     */
-    @ExceptionHandler(HandlerMethodValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    ErrorDTO invalidInputHandler(final HandlerMethodValidationException invalidException) {
-        // Extract the default message from the exception
-        final String rawErrorMessage = invalidException.getMessage();
+        errorDTO.setMessage(message);
 
-        // Extract only the text inside double quotes
-        final String errorMessage = extractQuotedText(rawErrorMessage);
-        log.error(errorMessage, invalidException);
+        // Set the violations
+        errorDTO.setViolations(violations);
 
-        // Extract violationDTOS from the validation exception using FieldErrorExtractor
-        final List<ViolationDTO> violationDTOS = fieldErrorExtractor.extractErrorObjects(invalidException);
-
-        return new ErrorDTO(null, errorMessage, violationDTOS, ZonedDateTime.now());
-    }
-
-    /**
-     * Handles MethodArgumentNotValidException which occurs when @Valid validation fails.
-     *
-     * @param invalidException the exception to handle
-     * @return a ResponseEntity containing error details
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    ErrorDTO invalidInputHandler(final MethodArgumentNotValidException invalidException) {
-        final String rawErrorMessage = invalidException.getMessage();
-        final String errorMessage = extractQuotedText(rawErrorMessage);
-
-        // Extract violationDTOS from the validation exception using FieldErrorExtractor
-        final List<ViolationDTO> violationDTOS = fieldErrorExtractor
-                .extractErrorObjects(invalidException.getBindingResult().getFieldErrors());
-        return new ErrorDTO(null, errorMessage, violationDTOS, ZonedDateTime.now());
-    }
-
-    /**
-     * Handles ConstraintViolationException which occurs when method parameter validation fails.
-     *
-     * @param ex the exception to handle
-     * @return a ResponseEntity containing error details
-     */
-    @ExceptionHandler(ConstraintViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    ErrorDTO handleConstraintViolationException(final ConstraintViolationException ex) {
-        log.error("Validation error", ex);
-
-        // Extract violationDTOS from the constraint violation exception using FieldErrorExtractor
-        final List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
-
-        // Extract the message from the message source
-        final String errorMessage = messageSource.getMessage("global.400.001", null, "Validation failed", Locale.getDefault());
-
-        return new ErrorDTO(HttpStatus.BAD_REQUEST.name(), errorMessage, violations, ZonedDateTime.now());
-    }
-
-    /**
-     * Handles CustomerNotFoundException which occurs when a specific HTTP status needs to be returned.
-     *
-     * @param ex the exception to handle
-     * @return a ResponseEntity containing error details
-     */
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(CustomerNotFoundException.class)
-    @ResponseBody
-    ErrorDTO handleCustomerNotFoundException(final CustomerNotFoundException ex) {
-        log.error("CustomerNotFoundException", ex);
-
-        // Extract the message from the message source using the GLOBAL_ERROR_CODE
-        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), Locale.getDefault());
-
-        final ErrorDTO errorDTO = new ErrorDTO(HttpStatus.NOT_FOUND.name(), errorMessage, null, ZonedDateTime.now());
+        // Set the timestamp to the current time
+        errorDTO.setTimestamp(ZonedDateTime.now());
 
         return errorDTO;
     }
 
     /**
-     * Handles general exceptions that aren't caught by more specific handlers.
-     *
-     * @param ex the exception to handle
-     * @return a {@link ErrorDTO} containing error details
+     * Handles validation exceptions from @Valid annotations
      */
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    ErrorDTO handleGeneralException(final Exception ex) {
-        log.error("Unexpected error occurred", ex);
+    public ErrorDTO handleMethodArgumentNotValid(final MethodArgumentNotValidException ex) {
+        log.debug("Validation failed for request", ex);
 
-        // Extract the message from the message source using the GLOBAL_ERROR_CODE
-        final String errorMessage = messageSource.getMessage(GLOBAL_ERROR_CODE, null, GLOBAL_ERROR_CODE, Locale.getDefault());
+        List<ViolationDTO> violations = fieldErrorExtractor
+                .extractErrorObjects(ex.getBindingResult().getFieldErrors());
 
-        return new ErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR.name(), errorMessage, null, ZonedDateTime.now());
-    }
-
-
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    @ResponseBody
-    public ErrorDTO handleEmailAlreadyExistsException(final EmailAlreadyExistsException ex) {
-        log.error("Email already exists", ex);
-        return new ErrorDTO(
-                HttpStatus.CONFLICT.name(),
-                ex.getMessage(),
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "global.400.001",
                 null,
-                ZonedDateTime.now()
-        );
-    }
-
-    @ExceptionHandler(InvalidRefreshTokenException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ResponseBody
-    public ErrorDTO handleInvalidRefreshTokenException(final InvalidRefreshTokenException ex) {
-        log.error("Invalid refresh token", ex);
-
-        // Extract the message from the message source using the error code
-        final String errorMessage = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), Locale.getDefault());
-
-        return new ErrorDTO(
-                HttpStatus.UNAUTHORIZED.name(),
-                errorMessage,
-                null,
-                ZonedDateTime.now()
-        );
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ResponseBody
-    public ErrorDTO handleBadCredentialsException(final BadCredentialsException ex) {
-        log.error("Bad credentials", ex);
-
-        // Extract the message from the message source
-        final String errorMessage = messageSource.getMessage("auth.400.008", null, "Invalid email or password", Locale.getDefault());
-        
-        return new ErrorDTO(
-                HttpStatus.UNAUTHORIZED.name(),
-                errorMessage,
-                null,
-                ZonedDateTime.now()
-        );
-    }
-
-    @ExceptionHandler(UsernameNotFoundException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ResponseBody
-    public ErrorDTO handleUsernameNotFoundException(final UsernameNotFoundException ex) {
-        log.error("Username not found", ex);
-
-        // Extract the message from the message source
-        final String errorMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
-        
-        return new ErrorDTO(
-                HttpStatus.UNAUTHORIZED.name(),
-                errorMessage,
-                null,
-                ZonedDateTime.now()
+                "Validation failed",
+                violations
         );
     }
 
     /**
-     * Handles MethodArgumentTypeMismatchException which occurs when a method argument cannot be converted to the expected type.
-     * This is particularly useful for enum parameters like SortEnumDTO where invalid values should return a 400 error.
-     *
-     * @param ex the exception to handle
-     * @return a {@link ErrorDTO} containing error details
+     * Handles validation exceptions from method parameters
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleHandlerMethodValidation(final HandlerMethodValidationException ex) {
+        log.debug("Method parameter validation failed", ex);
+
+        List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
+
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "global.400.001",
+                null,
+                "Validation failed",
+                violations
+        );
+    }
+
+    /**
+     * Handles constraint violations
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleConstraintViolation(final ConstraintViolationException ex) {
+        log.debug("Constraint validation failed", ex);
+
+        List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
+
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "global.400.001",
+                null,
+                "Validation failed",
+                violations
+        );
+    }
+
+    /**
+     * Handles business exceptions - CustomerNotFoundException
+     */
+    @ExceptionHandler(CustomerNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleCustomerNotFound(final CustomerNotFoundException ex) {
+        log.debug("Customer not found: {}", ex.getMessage());
+
+        return createErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),    // Assuming exception has message key
+                ex.getArgs(),       // Assuming exception has args for i18n
+                ex.getMessage(),
+                null
+        );
+    }
+
+    /**
+     * Handles email already exists exception
+     */
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleEmailAlreadyExists(final EmailAlreadyExistsException ex) {
+        log.debug("Email already exists: {}", Arrays.stream(ex.getArgs()).findFirst().orElseThrow());
+
+        return createErrorResponse(
+                HttpStatus.CONFLICT,
+                "auth.409.001",
+                ex.getArgs(),
+                "Email already exists",
+                null
+        );
+    }
+
+    /**
+     * Handles authentication exceptions
+     */
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public ErrorDTO handleAuthenticationException(final Exception ex) {
+        log.debug("Authentication failed", ex);
+
+        // Use same message for both to avoid user enumeration
+        return createErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "auth.401.001",
+                null,
+                "Invalid credentials",
+                null
+        );
+    }
+
+    /**
+     * Handles invalid refresh token
+     */
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public ErrorDTO handleInvalidRefreshToken(final InvalidRefreshTokenException ex) {
+        log.debug("Invalid refresh token", ex);
+
+        return createErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "auth.401.002",
+                null,
+                "Invalid or expired refresh token",
+                null
+        );
+    }
+
+    /**
+     * Handles type mismatch exceptions
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ErrorDTO handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException ex) {
-        log.error("Method argument type mismatch", ex);
+    public ErrorDTO handleTypeMismatch(final MethodArgumentTypeMismatchException ex) {
+        log.debug("Type mismatch for parameter: {}", ex.getName());
 
-        String errorMessage;
+        String messageKey = "global.400.010";
+        Object[] args = new Object[]{ex.getName(), ex.getValue()};
 
-        // Check if this is a sortDir parameter error
-        if ("sortDir".equals(ex.getName()) && ex.getRequiredType() != null &&
-                ex.getRequiredType().isEnum()) {
-            // Use the specific error message for sortDir
-            errorMessage = messageSource.getMessage("global.400.009", null, "Invalid sort direction", Locale.getDefault());
-        } else {
-            // Generic error for other type mismatches
-            errorMessage = messageSource.getMessage("global.400.010", new Object[]{ex.getName(), ex.getValue()}, "Parameter '" + ex.getName() + "' has invalid value: '" + ex.getValue() + "'", Locale.getDefault());
+        // Special handling for known enum parameters
+        if ("sortDir".equals(ex.getName()) && ex.getRequiredType() != null
+                && ex.getRequiredType().isEnum()) {
+            messageKey = "global.400.009";
+            args = null;
         }
 
-        return new ErrorDTO(
-                HttpStatus.BAD_REQUEST.name(),
-                errorMessage,
-                null,
-                ZonedDateTime.now()
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                messageKey,
+                args,
+                String.format("Invalid value for parameter '%s'", ex.getName()),
+                null
         );
     }
 
     /**
-     * Handles LocalizedJsonParseException which occurs when parsing JSON fails.
-     * This exception contains a message key and arguments for localization.
-     *
-     * @param ex the exception to handle
-     * @return a {@link ErrorDTO} containing error details
+     * Handles JSON parse exceptions with localization
      */
     @ExceptionHandler(LocalizedJsonParseException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ErrorDTO handleLocalizedJsonParseException(final LocalizedJsonParseException ex) {
-        log.error("JSON parse error: {}", ex.getMessage(), ex);
+    public ErrorDTO handleJsonParseException(final LocalizedJsonParseException ex) {
+        log.debug("JSON parse error", ex);
 
-        // Extract the message from the message source using the message key and arguments from the exception
-        final String errorMessage = messageSource.getMessage(
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
                 ex.getMessageKey(),
                 ex.getArgs(),
-                ex.getMessage(), // Use the exception's message as fallback
-                Locale.getDefault()
+                ex.getMessage(),
+                null
         );
+    }
 
-        return new ErrorDTO(
-                HttpStatus.BAD_REQUEST.name(),
-                errorMessage,
+    /**
+     * Handles all other unexpected exceptions
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public ErrorDTO handleGeneralException(final Exception ex) {
+        // Log as error since this is unexpected
+        log.error("Unexpected error occurred", ex);
+
+        return createErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                GLOBAL_ERROR_CODE,
                 null,
-                ZonedDateTime.now()
+                "An unexpected error occurred",
+                null
         );
     }
 }

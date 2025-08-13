@@ -7,6 +7,7 @@ import com.example.store.dto.error.ViolationDTO;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("unit")
+@DisplayName("GsonConfig - {Unit}")
 class GsonConfigTest {
 
     private Gson gson;
@@ -29,14 +31,16 @@ class GsonConfigTest {
         // Create Gson instance manually instead of using Spring context
         gson = new GsonBuilder()
                 .registerTypeAdapter(ZonedDateTime.class, new ZonedDateTimeBiSerializer())
+                .setPrettyPrinting()
                 .create();
     }
 
     @Test
+    @DisplayName("Should correctly serialize and deserialize ZonedDateTime")
     void testZonedDateTimeSerialization() {
         // Given
         final ZonedDateTime now = ZonedDateTime.now();
-        final List<ViolationDTO> violations = Collections.singletonList(new ViolationDTO("field1", "value1", "Error message"));
+        final List<ViolationDTO> violations = Collections.singletonList(new ViolationDTO("field1", "value1", "Error message", null));
         final ErrorDTO errorDTO = new ErrorDTO("Error", "An error occurred", violations, now);
 
         // When
@@ -60,6 +64,7 @@ class GsonConfigTest {
     }
 
     @Test
+    @DisplayName("Should correctly serialize and deserialize AbstractSuperDTO fields")
     void testAbstractSuperDTOSerialization() {
         // Given
         CustomerDTO customerDTO = new CustomerDTO();

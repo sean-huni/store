@@ -44,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO createOrder(final OrderDTO orderDTO) {
         // Check if customer exists
         final Customer customer = customerRepo.findById(orderDTO.getCustomerId())
-                .orElseThrow(() -> new CustomerNotFoundException("order.400.000"));
+                .orElseThrow(() -> new CustomerNotFoundException("order.400.000", new Long[]{orderDTO.getCustomerId()}));
 
         final var order = orderMapper.toOrder(orderDTO);
         order.setCustomer(customer);

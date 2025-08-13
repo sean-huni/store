@@ -1,6 +1,6 @@
 package com.example.store.integration.controller;
 
-import com.example.store.StoreApplication;
+import com.example.store.StoreApp;
 import com.example.store.integration.config.IntTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = StoreApplication.class)
+@SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
 @DisplayName("Integration Test - OpenAPI Documentation Security")

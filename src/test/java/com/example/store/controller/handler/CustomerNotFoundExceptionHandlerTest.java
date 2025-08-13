@@ -18,11 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("Unit Test - CustomerNotFoundException Handler")
+@DisplayName("CustomerNotFoundExceptionHandler - {Unit}")
 @ExtendWith(MockitoExtension.class)
 class CustomerNotFoundExceptionHandlerTest {
 
@@ -45,14 +44,15 @@ class CustomerNotFoundExceptionHandlerTest {
         // Given
         String errorCode = "customer.404.001";
         String resolvedMessage = "Customer not found";
-        CustomerNotFoundException exception = new CustomerNotFoundException(errorCode);
+        Object[] args = new Long[]{200L};
+        CustomerNotFoundException exception = new CustomerNotFoundException(errorCode, args);
 
-        // Mock the message source to return the resolved message when given the error code
-        when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), any(Locale.class)))
+        // Mock the message source to return the resolved message when given the error code and args
+        when(messageSource.getMessage(eq(errorCode), eq(args), eq(errorCode), any(Locale.class)))
                 .thenReturn(resolvedMessage);
 
         // When
-        ErrorDTO result = validationExceptionHandler.handleCustomerNotFoundException(exception);
+        final ErrorDTO result = validationExceptionHandler.handleCustomerNotFound(exception);
 
         // Then
         assertNotNull(result);

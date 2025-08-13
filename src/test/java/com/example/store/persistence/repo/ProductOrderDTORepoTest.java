@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@DisplayName("DB-Integration-Test - Given ProductOrderRepo")
+@DisplayName("ProductOrderRepo - {Int}")
 class ProductOrderDTORepoTest {
     @Autowired
     private ProductOrderRepo productOrderRepo;

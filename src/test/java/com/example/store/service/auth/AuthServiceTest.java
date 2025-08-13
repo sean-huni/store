@@ -7,6 +7,7 @@ import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.exception.EmailAlreadyExistsException;
 import com.example.store.exception.InvalidRefreshTokenException;
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthService Tests")
+@DisplayName("AuthService - {Unit}")
 class AuthServiceTest {
 
     @Mock
@@ -87,7 +88,7 @@ class AuthServiceTest {
                 .password(encodedPassword)
                 .firstName("John")
                 .lastName("Doe")
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
@@ -144,7 +145,7 @@ class AuthServiceTest {
         assertEquals(encodedPassword, savedUser.getPassword());
         assertEquals("John", savedUser.getFirstName());
         assertEquals("Doe", savedUser.getLastName());
-        assertEquals(User.Role.USER, savedUser.getRole());
+        assertEquals(Role.USER, savedUser.getRole());
     }
 
     @Test
@@ -159,7 +160,7 @@ class AuthServiceTest {
                 () -> authService.register(regReqDTO)
         );
 
-        assertEquals("Email already registered: " + email, exception.getMessage());
+        assertEquals("auth.400.011", exception.getMessage());
         verify(userRepo, never()).save(any(User.class));
     }
 

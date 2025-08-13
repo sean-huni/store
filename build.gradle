@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'org.graalvm.buildtools.native' version '0.10.6'
     id 'org.springframework.boot' version '3.4.8'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.liquibase.gradle' version '2.2.0'
@@ -45,6 +46,11 @@ apply from: 'jacoco.gradle'
 
 group = 'com.example'
 version = '1.0.1'
+
+// Set the JAR file name to a fixed name without version
+bootJar {
+    archiveFileName = 'store.jar'
+}
 
 // Define exclusions in one place to maintain consistency
 def exclusions = ['**/*Test*', '@Generated']
@@ -179,6 +185,64 @@ tasks.register('runJacocoVerification') {
     doLast {
         println "JaCoCo verification completed"
     }
+}
+
+// Configure GraalVM native image build
+graalvmNative {
+    binaries {
+        main {
+            // Set the name of the native executable to match the project name
+            imageName = "store"
+
+            // Enable virtual threads support
+            buildArgs.add("--enable-preview")
+            buildArgs.add("--enable-url-protocols=http,https")
+            buildArgs.add("--initialize-at-build-time=org.slf4j,ch.qos.logback")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+            buildArgs.add("-H:+AddAllCharsets")
+
+            // Speed up builds
+            buildArgs.add("--gc=epsilon")
+            buildArgs.add("-march=native")
+            buildArgs.add("--no-fallback")
+
+            // Memory optimization for the build process (JVM running the build)
+            buildArgs.add("-J-Xmx12g")  // Increased from 8g to 12g
+            buildArgs.add("-J-XX:MaxMetaspaceSize=2g")  // Add metaspace memory
+
+            // Enable experimental options (must come before experimental options)
+            buildArgs.add("-H:+UnlockExperimentalVMOptions")
+
+            // Memory options for the native image itself are set via the main class
+            // Don't set -Xmx directly as a buildArg as it will be interpreted as the main class
+
+            // Note: StripDebugInfo option is not supported on macOS
+            // buildArgs.add("-H:+StripDebugInfo")
+
+            // Configure virtual thread scheduler for optimal performance
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(javaVersion)
+            }
+        }
+    }
+    metadataRepository {
+        enabled = true
+    }
+    agent {
+        enabled = true
+        // Minimal configuration to avoid errors
+    }
+}
+
+// Ensure Java compatibility
+java {
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
+}
+
+// Disable AOT processing for tests to avoid issues
+tasks.named('processTestAot') {
+    enabled = false
 }
 
 // qualityCheck task is defined in jacoco.gradle

@@ -44,7 +44,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
-@DisplayName("Unit Test - ValidationExceptionHandler")
+@DisplayName("ValidationExceptionHandler - {Unit}")
 @ExtendWith(MockitoExtension.class)
 class ValidationExceptionHandlerTest {
     @Mock
@@ -75,23 +75,25 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then extract error message and create ErrorDTO")
         void thenExtractErrorMessageAndCreateErrorDTO() {
             // Given
-            String errorMessage = "Validation failed for parameter";
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
-            when(exception.getMessage()).thenReturn("Error: \"" + errorMessage + "\" occurred");
 
             List<ViolationDTO> violations = new ArrayList<>();
-            violations.add(new ViolationDTO("field", "value", "error"));
+            violations.add(new ViolationDTO("field", "value", "error", "error.code.seq"));
 
             // Mock the FieldErrorExtractor behavior
             when(fieldErrorExtractor.extractErrorObjects(exception)).thenReturn(violations);
 
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.001"), isNull(), eq("Validation failed"), any(Locale.class)))
+                    .thenReturn("Validation failed");
+
             // When
-            ErrorDTO result = validationExceptionHandler.invalidInputHandler(exception);
+            ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals(errorMessage, result.getMessage());
-            assertNull(result.getName());
+            assertEquals("Validation failed", result.getMessage());
+            assertEquals("BAD_REQUEST", result.getName());
             assertNotNull(result.getTimestamp());
             assertEquals(violations, result.getViolations());
         }
@@ -105,9 +107,7 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then extract error message and create ErrorDTO")
         void thenExtractErrorMessageAndCreateErrorDTO() {
             // Given
-            String errorMessage = "Validation failed for object";
             MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
-            when(exception.getMessage()).thenReturn("Error: \"" + errorMessage + "\" occurred");
 
             BindingResult bindingResult = mock(BindingResult.class);
             List<FieldError> fieldErrors = new ArrayList<>();
@@ -115,18 +115,22 @@ class ValidationExceptionHandlerTest {
             when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
 
             List<ViolationDTO> violations = new ArrayList<>();
-            violations.add(new ViolationDTO("field", "value", "error"));
+            violations.add(new ViolationDTO("field", "value", "error", "error.code.seq"));
 
             // Mock the FieldErrorExtractor behavior
             when(fieldErrorExtractor.extractErrorObjects(fieldErrors)).thenReturn(violations);
 
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.001"), isNull(), eq("Validation failed"), any(Locale.class)))
+                    .thenReturn("Validation failed");
+
             // When
-            ErrorDTO result = validationExceptionHandler.invalidInputHandler(exception);
+            ErrorDTO result = validationExceptionHandler.handleMethodArgumentNotValid(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals(errorMessage, result.getMessage());
-            assertNull(result.getName());
+            assertEquals("Validation failed", result.getMessage());
+            assertEquals("BAD_REQUEST", result.getName());
             assertNotNull(result.getTimestamp());
             assertEquals(violations, result.getViolations());
         }
@@ -141,13 +145,18 @@ class ValidationExceptionHandlerTest {
         void thenCreateErrorDTOWithMessageFromMessageSource() {
             // Given
             Exception exception = new RuntimeException("Some unexpected error");
+            String expectedMessage = "An unexpected error occurred";
+
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.000"), isNull(), eq("An unexpected error occurred"), any(Locale.class)))
+                    .thenReturn(expectedMessage);
 
             // When
             ErrorDTO result = validationExceptionHandler.handleGeneralException(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals(RESOLVED_MESSAGE, result.getMessage());
+            assertEquals(expectedMessage, result.getMessage());
             assertEquals("INTERNAL_SERVER_ERROR", result.getName());
             assertNull(result.getViolations());
             assertNotNull(result.getTimestamp());
@@ -159,57 +168,75 @@ class ValidationExceptionHandlerTest {
     class WhenExtractingQuotedText {
 
         @Test
-        @DisplayName("Then extract text inside quotes")
-        void thenExtractTextInsideQuotes() {
+        @DisplayName("Then create ErrorDTO with validation failed message")
+        void thenCreateErrorDTOWithValidationFailedMessage() {
             // Given
-            String message = "Error: \"This is the quoted text\" that we want to extract";
-
-            // When - We need to use reflection to test this private method
-            // For simplicity, we'll test it indirectly through the public methods
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
-            when(exception.getMessage()).thenReturn(message);
+
+            // Mock the FieldErrorExtractor to return empty violations
+            when(fieldErrorExtractor.extractErrorObjects(any(HandlerMethodValidationException.class)))
+                    .thenReturn(new ArrayList<>());
+
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.001"), isNull(), eq("Validation failed"), any(Locale.class)))
+                    .thenReturn("Validation failed");
 
             // When
-            ErrorDTO result = validationExceptionHandler.invalidInputHandler(exception);
+            ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertEquals("This is the quoted text", result.getMessage());
+            assertEquals("Validation failed", result.getMessage());
+            assertEquals("BAD_REQUEST", result.getName());
+            assertNotNull(result.getViolations());
+            assertNotNull(result.getTimestamp());
         }
 
         @Test
-        @DisplayName("Then return original message if no quotes")
-        void thenReturnOriginalMessageIfNoQuotes() {
+        @DisplayName("Then return validation failed message for any input")
+        void thenReturnValidationFailedMessageForAnyInput() {
             // Given
-            String message = "Error message without quotes";
-
-            // When - We need to use reflection to test this private method
-            // For simplicity, we'll test it indirectly through the public methods
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
-            when(exception.getMessage()).thenReturn(message);
+
+            // Mock the FieldErrorExtractor to return empty violations
+            when(fieldErrorExtractor.extractErrorObjects(any(HandlerMethodValidationException.class)))
+                    .thenReturn(new ArrayList<>());
+
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.001"), isNull(), eq("Validation failed"), any(Locale.class)))
+                    .thenReturn("Validation failed");
 
             // When
-            ErrorDTO result = validationExceptionHandler.invalidInputHandler(exception);
+            ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertEquals(message, result.getMessage());
+            assertEquals("Validation failed", result.getMessage());
+            assertEquals("BAD_REQUEST", result.getName());
+            assertNotNull(result.getViolations());
+            assertNotNull(result.getTimestamp());
         }
 
         @Test
-        @DisplayName("Then handle null message")
-        void thenHandleNullMessage() {
+        @DisplayName("Then handle null message and return validation failed")
+        void thenHandleNullMessageAndReturnValidationFailed() {
             // Given
-            String message = null;
-
-            // When - We need to use reflection to test this private method
-            // For simplicity, we'll test it indirectly through the public methods
             HandlerMethodValidationException exception = mock(HandlerMethodValidationException.class);
-            when(exception.getMessage()).thenReturn(message);
+
+            // Mock the FieldErrorExtractor to return empty violations
+            when(fieldErrorExtractor.extractErrorObjects(any(HandlerMethodValidationException.class)))
+                    .thenReturn(new ArrayList<>());
+
+            // Mock the message source to return the expected message
+            when(messageSource.getMessage(eq("global.400.001"), isNull(), eq("Validation failed"), any(Locale.class)))
+                    .thenReturn("Validation failed");
 
             // When
-            ErrorDTO result = validationExceptionHandler.invalidInputHandler(exception);
+            ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertNull(result.getMessage());
+            assertEquals("Validation failed", result.getMessage());
+            assertEquals("BAD_REQUEST", result.getName());
+            assertNotNull(result.getViolations());
+            assertNotNull(result.getTimestamp());
         }
     }
 
@@ -221,15 +248,21 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then create ErrorDTO with CONFLICT status")
         void thenCreateErrorDTOWithConflictStatus() {
             // Given
-            String errorMessage = "Email already exists";
-            EmailAlreadyExistsException exception = new EmailAlreadyExistsException(errorMessage);
+            final String errorMessage = "auth.409.001";
+            final String email = "test@email.com";
+            final String resolvedMessage = "Email already exists";
+            final EmailAlreadyExistsException exception = new EmailAlreadyExistsException(errorMessage, new String[]{email});
+
+            // Mock the message source to return the resolved message
+            when(messageSource.getMessage(eq("auth.409.001"), eq(new String[]{email}), eq("Email already exists"), any(Locale.class)))
+                    .thenReturn(resolvedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleEmailAlreadyExistsException(exception);
+            ErrorDTO result = validationExceptionHandler.handleEmailAlreadyExists(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals(errorMessage, result.getMessage());
+            assertEquals(resolvedMessage, result.getMessage());
             assertEquals("CONFLICT", result.getName());
             assertNull(result.getViolations());
             assertNotNull(result.getTimestamp());
@@ -244,16 +277,16 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then create ErrorDTO with UNAUTHORIZED status")
         void thenCreateErrorDTOWithUnauthorizedStatus() {
             // Given
-            String errorCode = "auth.400.006";
-            String resolvedMessage = "Invalid refresh token";
+            String errorCode = "auth.401.002";
+            String resolvedMessage = "Invalid or expired refresh token";
             InvalidRefreshTokenException exception = new InvalidRefreshTokenException(errorCode);
 
             // Mock the message source to return the resolved message when given the error code
-            when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), any(Locale.class)))
+            when(messageSource.getMessage(eq(errorCode), isNull(), eq("Invalid or expired refresh token"), any(Locale.class)))
                     .thenReturn(resolvedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleInvalidRefreshTokenException(exception);
+            ErrorDTO result = validationExceptionHandler.handleInvalidRefreshToken(exception);
 
             // Then
             assertNotNull(result);
@@ -275,15 +308,15 @@ class ValidationExceptionHandlerTest {
             BadCredentialsException exception = new BadCredentialsException("Original message");
 
             // Mock the message source to return the expected message
-            when(messageSource.getMessage(eq("auth.400.008"), isNull(), eq("Invalid email or password"), any(Locale.class)))
-                    .thenReturn("Invalid email or password");
+            when(messageSource.getMessage(eq("auth.401.001"), isNull(), eq("Invalid credentials"), any(Locale.class)))
+                    .thenReturn("Invalid credentials");
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleBadCredentialsException(exception);
+            ErrorDTO result = validationExceptionHandler.handleAuthenticationException(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals("Invalid email or password", result.getMessage());
+            assertEquals("Invalid credentials", result.getMessage());
             assertEquals("UNAUTHORIZED", result.getName());
             assertNull(result.getViolations());
             assertNotNull(result.getTimestamp());
@@ -301,15 +334,15 @@ class ValidationExceptionHandlerTest {
             UsernameNotFoundException exception = new UsernameNotFoundException("Original message");
 
             // Mock the message source to return the expected message
-            when(messageSource.getMessage(eq("auth.400.009"), isNull(), eq("User not found"), any(Locale.class)))
-                    .thenReturn("User not found");
+            when(messageSource.getMessage(eq("auth.401.001"), isNull(), eq("Invalid credentials"), any(Locale.class)))
+                    .thenReturn("Invalid credentials");
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleUsernameNotFoundException(exception);
+            ErrorDTO result = validationExceptionHandler.handleAuthenticationException(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals("User not found", result.getMessage());
+            assertEquals("Invalid credentials", result.getMessage());
             assertEquals("UNAUTHORIZED", result.getName());
             assertNull(result.getViolations());
             assertNotNull(result.getTimestamp());
@@ -326,7 +359,7 @@ class ValidationExceptionHandlerTest {
             // Given
             // Create the expected ViolationDTO list
             List<ViolationDTO> violationDTOs = new ArrayList<>();
-            violationDTOs.add(new ViolationDTO("fieldName", "invalidValue", "error message"));
+            violationDTOs.add(new ViolationDTO("fieldName", "invalidValue", "error message", "error.code.seq"));
 
             // Mock the FieldErrorExtractor behavior to return the expected violations for any ConstraintViolationException
             when(fieldErrorExtractor.extractErrorObjects(any(ConstraintViolationException.class))).thenReturn(violationDTOs);
@@ -340,7 +373,7 @@ class ValidationExceptionHandlerTest {
             ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleConstraintViolationException(exception);
+            ErrorDTO result = validationExceptionHandler.handleConstraintViolation(exception);
 
             // Then
             assertNotNull(result);
@@ -357,12 +390,11 @@ class ValidationExceptionHandlerTest {
             // Given
             // Create a simple ConstraintViolationException with an empty set of violations
             Set<ConstraintViolation<?>> violations = new HashSet<>();
-            ConstraintViolationException exception = mock(ConstraintViolationException.class);
-            when(exception.getMessage()).thenReturn("Validation failed");
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
             // Create the expected ViolationDTO list
-            List<ViolationDTO> violationDTOs = new ArrayList<>();
-            violationDTOs.add(new ViolationDTO("fieldName", "invalidValue", "Resolved error message"));
+            final List<ViolationDTO> violationDTOs = new ArrayList<>();
+            violationDTOs.add(new ViolationDTO("fieldName", "invalidValue", "Resolved error message", "error.code.seq"));
 
             // Mock the FieldErrorExtractor behavior
             doReturn(violationDTOs).when(fieldErrorExtractor).extractErrorObjects(any(ConstraintViolationException.class));
@@ -372,7 +404,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn("Validation failed");
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleConstraintViolationException(exception);
+            final ErrorDTO result = validationExceptionHandler.handleConstraintViolation(exception);
 
             // Then
             assertNotNull(result);
@@ -389,7 +421,7 @@ class ValidationExceptionHandlerTest {
             // Given
             // Create the expected ViolationDTO list
             List<ViolationDTO> violationDTOs = new ArrayList<>();
-            violationDTOs.add(new ViolationDTO("fieldName", "", "error message"));
+            violationDTOs.add(new ViolationDTO("fieldName", "", "error message", "error.code.seq"));
 
             // Mock the FieldErrorExtractor behavior to return the expected violations for any ConstraintViolationException
             when(fieldErrorExtractor.extractErrorObjects(any(ConstraintViolationException.class))).thenReturn(violationDTOs);
@@ -399,11 +431,11 @@ class ValidationExceptionHandlerTest {
                     .thenReturn("Validation failed");
 
             // Create a simple ConstraintViolationException
-            Set<ConstraintViolation<?>> violations = new HashSet<>();
-            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+            final Set<ConstraintViolation<?>> violations = new HashSet<>();
+            final ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleConstraintViolationException(exception);
+            final ErrorDTO result = validationExceptionHandler.handleConstraintViolation(exception);
 
             // Then
             assertNotNull(result);
@@ -425,14 +457,15 @@ class ValidationExceptionHandlerTest {
             // Given
             String errorCode = "customer.404.001";
             String resolvedMessage = "Customer not found";
-            CustomerNotFoundException exception = new CustomerNotFoundException(errorCode);
+            Object[] args = new Object[]{1L};
+            CustomerNotFoundException exception = new CustomerNotFoundException(errorCode, args);
 
-            // Mock the message source to return the resolved message when given the error code
-            when(messageSource.getMessage(eq(errorCode), isNull(), eq(errorCode), any(Locale.class)))
+            // Mock the message source to return the resolved message when given the error code and args
+            when(messageSource.getMessage(eq(errorCode), eq(args), eq(errorCode), any(Locale.class)))
                     .thenReturn(resolvedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleCustomerNotFoundException(exception);
+            ErrorDTO result = validationExceptionHandler.handleCustomerNotFound(exception);
 
             // Then
             assertNotNull(result);
@@ -468,11 +501,11 @@ class ValidationExceptionHandlerTest {
             doReturn(enumClass).when(exception).getRequiredType();
 
             // Mock the message source to return the resolved message
-            lenient().when(messageSource.getMessage(eq("global.400.009"), isNull(), eq("Invalid sort direction"), any(Locale.class)))
+            lenient().when(messageSource.getMessage(eq("global.400.009"), isNull(), eq("Invalid value for parameter 'sortDir'"), any(Locale.class)))
                     .thenReturn(resolvedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+            ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
             // Then
             assertNotNull(result);
@@ -502,7 +535,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn(expectedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+            ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
             // Then
             assertNotNull(result);
@@ -533,7 +566,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn(expectedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+            ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
             // Then
             assertNotNull(result);
@@ -564,7 +597,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn(expectedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleMethodArgumentTypeMismatchException(exception);
+            ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
             // Then
             assertNotNull(result);
@@ -602,7 +635,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn(localizedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleLocalizedJsonParseException(exception);
+            ErrorDTO result = validationExceptionHandler.handleJsonParseException(exception);
 
             // Then
             assertNotNull(result);
@@ -634,7 +667,7 @@ class ValidationExceptionHandlerTest {
                     .thenReturn(fallbackMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleLocalizedJsonParseException(exception);
+            ErrorDTO result = validationExceptionHandler.handleJsonParseException(exception);
 
             // Then
             assertNotNull(result);
@@ -660,12 +693,10 @@ class ValidationExceptionHandlerTest {
                     new RuntimeException("Original cause")
             );
 
-            // Mock the message source to return the fallback message
-            when(messageSource.getMessage(eq(messageKey), eq(args), eq(fallbackMessage), any(Locale.class)))
-                    .thenReturn(fallbackMessage);
+            // No mock setup needed since messageKey is null and messageSource.getMessage() won't be called
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleLocalizedJsonParseException(exception);
+            ErrorDTO result = validationExceptionHandler.handleJsonParseException(exception);
 
             // Then
             assertNotNull(result);

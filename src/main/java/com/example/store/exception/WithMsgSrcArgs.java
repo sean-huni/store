@@ -1,6 +1,11 @@
 package com.example.store.exception;
 
-public class EmailAlreadyExistsException extends WithMsgSrcArgs {
+import lombok.Getter;
+
+public abstract class WithMsgSrcArgs extends RuntimeException {
+    @Getter
+    private final Object[] args;
+
 
     /**
      * Constructs a new runtime exception with the specified detail message.
@@ -11,7 +16,8 @@ public class EmailAlreadyExistsException extends WithMsgSrcArgs {
      *                later retrieval by the {@link #getMessage()} method.
      * @param args    args with error values.
      */
-    public EmailAlreadyExistsException(final String message, final Object[] args) {
-        super(message, args);
+    WithMsgSrcArgs(String message, Object[] args) {
+        super(message);
+        this.args = args;
     }
 }

@@ -27,7 +27,7 @@ public class IntTestConfig {
     
     @DynamicPropertySource
     static void additionalProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         registry.add("spring.liquibase.enabled", () -> "true");
         registry.add("spring.liquibase.drop-first", () -> "true");
     }

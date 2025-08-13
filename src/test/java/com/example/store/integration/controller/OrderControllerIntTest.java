@@ -1,12 +1,13 @@
 package com.example.store.integration.controller;
 
-import com.example.store.StoreApplication;
+import com.example.store.StoreApp;
 import com.example.store.dto.OrderDTO;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.entity.Order;
 import com.example.store.persistence.entity.Product;
+import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
@@ -43,10 +44,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = StoreApplication.class)
+@SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
-@DisplayName("Integration Test - OrderController")
+@DisplayName("OrderController - {int}")
 @Transactional
 @Testcontainers
 @ActiveProfiles("int")
@@ -116,7 +117,7 @@ class OrderControllerIntTest {
                 .lastName("User")
                 .email("test@example.com")
                 .password(passwordEncoder.encode("password"))
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
@@ -193,7 +194,7 @@ class OrderControllerIntTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].id").value(testOrder.getId()))
-                    .andExpect(jsonPath("$[0].customer.id").value(testCustomer.getId()));
+                    .andExpect(jsonPath("$[0].customerId").value(testCustomer.getId()));
         }
 
         @Test
@@ -204,7 +205,7 @@ class OrderControllerIntTest {
                             .header("Authorization", authToken))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
-                    .andExpect(jsonPath("$.violations[0].field").value("findOrders.page"));
+                    .andExpect(jsonPath("$.violations[0].field").value("page"));
         }
 
         @Test
@@ -215,7 +216,7 @@ class OrderControllerIntTest {
                             .header("Authorization", authToken))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
-                    .andExpect(jsonPath("$.violations[0].field").value("findOrders.limit"));
+                    .andExpect(jsonPath("$.violations[0].field").value("limit"));
         }
 
         @Test
@@ -242,7 +243,7 @@ class OrderControllerIntTest {
                             .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testOrder.getId()))
-                    .andExpect(jsonPath("$.customer.id").value(testCustomer.getId()));
+                    .andExpect(jsonPath("$.customerId").value(testCustomer.getId()));
         }
 
         @Test
@@ -284,6 +285,7 @@ class OrderControllerIntTest {
             OrderDTO newOrder = new OrderDTO();
             newOrder.setCustomerId(testCustomer.getId());
             newOrder.setDescription("Test Order Description");
+            newOrder.setProductIds(new HashSet<>(java.util.List.of(testProduct.getId())));
             
             // When
             MvcResult result = mockMvc.perform(post("/orders")
@@ -292,7 +294,8 @@ class OrderControllerIntTest {
                             .content(customGson.toJson(newOrder)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").isNotEmpty())
-                    .andExpect(jsonPath("$.customer.id").value(testCustomer.getId()))
+                    .andExpect(jsonPath("$.customerId").value(testCustomer.getId()))
+                    .andExpect(jsonPath("$.description").value("Test Order Description"))
                     .andReturn();
 
             // Then
@@ -308,6 +311,7 @@ class OrderControllerIntTest {
         void thenReturn400WhenCustomerIdIsMissing() throws Exception {
             // Given
             OrderDTO invalidOrder = new OrderDTO();
+            invalidOrder.setProductIds(new HashSet<>(java.util.List.of(testProduct.getId())));
             
             // When & Then
             mockMvc.perform(post("/orders")
@@ -324,6 +328,7 @@ class OrderControllerIntTest {
             OrderDTO invalidOrder = new OrderDTO();
             invalidOrder.setCustomerId(999L);
             invalidOrder.setDescription("Test Order with Invalid Customer");
+            invalidOrder.setProductIds(new HashSet<>(java.util.List.of(testProduct.getId())));
             
             // When & Then
             mockMvc.perform(post("/orders")
@@ -343,6 +348,7 @@ class OrderControllerIntTest {
             // Given
             OrderDTO invalidOrder = new OrderDTO();
             invalidOrder.setCustomerId(testCustomer.getId());
+            invalidOrder.setProductIds(new HashSet<>(java.util.List.of(testProduct.getId())));
             // Description is intentionally not set
 
             // When & Then
@@ -362,6 +368,7 @@ class OrderControllerIntTest {
             OrderDTO invalidOrder = new OrderDTO();
             invalidOrder.setCustomerId(testCustomer.getId());
             invalidOrder.setDescription(""); // Empty string
+            invalidOrder.setProductIds(new HashSet<>(java.util.List.of(testProduct.getId())));
 
             // When & Then
             mockMvc.perform(post("/orders")
@@ -371,6 +378,26 @@ class OrderControllerIntTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
                     .andExpect(jsonPath("$.violations[0].field").value("description"));
+        }
+
+        @Test
+        @DisplayName("Then return 400 when productIds is null with correct error message")
+        void thenReturn400WhenProductIdsIsNull() throws Exception {
+            // Given
+            OrderDTO invalidOrder = new OrderDTO();
+            invalidOrder.setCustomerId(testCustomer.getId());
+            invalidOrder.setDescription("Test Order Description");
+            // productIds is intentionally not set (null)
+
+            // When & Then
+            mockMvc.perform(post("/orders")
+                            .header("Authorization", authToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(customGson.toJson(invalidOrder)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.violations", hasSize(1)))
+                    .andExpect(jsonPath("$.violations[0].field").value("productIds"))
+                    .andExpect(jsonPath("$.violations[0].errMsg").value("order.400.001"));
         }
     }
 }

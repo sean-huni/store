@@ -74,7 +74,7 @@ public class ZonedDateTimeBiSerializer implements JsonSerializer<ZonedDateTime>,
      * @return The JSON element representing the ZonedDateTime.
      */
     @Override
-    public com.google.gson.JsonElement serialize(ZonedDateTime dateTime, Type type, JsonSerializationContext ctx) {
+    public JsonElement serialize(ZonedDateTime dateTime, Type type, JsonSerializationContext ctx) {
         return nonNull(dateTime) ? ctx.serialize(dateTime.format(FORMATTER)) : null;
     }
 }

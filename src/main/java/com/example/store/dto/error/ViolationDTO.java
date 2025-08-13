@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ViolationDTO {
-    private String field;
-    private String rejectedValue;
-    private String errMsg;
+    private String field;       // Field Name with error
+    private String rjctValue;   // Rejected Value
+    private String errMsg;      // Error Message
+    private String errCode;     // Error Code or Message Source Key
 }

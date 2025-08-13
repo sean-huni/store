@@ -7,7 +7,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,10 +18,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Builder
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Entity
 @Table(name = "\"user\"")
 public class User extends AbstractSuperEntity implements UserDetails {
@@ -48,10 +47,5 @@ public class User extends AbstractSuperEntity implements UserDetails {
     @Override
     public String getUsername() {
         return email;
-    }
-
-    public enum Role {
-        USER,
-        ADMIN
     }
 }

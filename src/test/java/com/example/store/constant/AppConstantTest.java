@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("unit")
-@DisplayName("Unit Test - AppConstant")
+@DisplayName("AppConstant - {Unit}")
 class AppConstantTest {
 
     @Test

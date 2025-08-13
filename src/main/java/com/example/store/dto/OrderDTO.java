@@ -14,6 +14,6 @@ public class OrderDTO extends AbstractSuperDTO {
     private String description;
     @NotNull(message = "order.400.000")
     private Long customerId;
-    private CustomerDTO customer;
+    @NotNull(message = "order.400.001")
     private Set<Long> productIds;
 }

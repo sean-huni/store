@@ -1,6 +1,6 @@
 package com.example.store.integration.controller;
 
-import com.example.store.StoreApplication;
+import com.example.store.StoreApp;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
@@ -31,10 +31,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = StoreApplication.class)
+@SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
-@DisplayName("Integration Test - AuthController")
+@DisplayName("AuthController - {Int}")
 @Transactional
 @Testcontainers
 @ActiveProfiles("dev") // Using dev profile to reproduce the error
