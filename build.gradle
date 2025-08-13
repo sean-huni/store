@@ -45,7 +45,7 @@ ext {
 apply from: 'jacoco.gradle'
 
 group = 'com.example'
-version = '1.0.1'
+version = '1.0.2'
 
 // Set the JAR file name to a fixed name without version
 bootJar {

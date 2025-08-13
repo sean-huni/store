@@ -18,6 +18,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -531,6 +532,231 @@ class FieldErrorExtractorTest {
             assertEquals(expectedTruncatedValue, result.get(0).getRjctValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
             verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), isNull(), eq(Locale.getDefault()));
+        }
+    }
+
+    @Nested
+    @DisplayName("When testing edge cases for better coverage")
+    class WhenTestingEdgeCasesForBetterCoverage {
+
+        @Test
+        @DisplayName("Then handle property path extraction failure")
+        void thenHandlePropertyPathExtractionFailure() {
+            // Given
+            String errorCode = "validation.error";
+            String resolvedMessage = "Validation error occurred";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+
+            // Mock path to throw exception during spliterator operation
+            when(path.spliterator()).thenThrow(new RuntimeException("Path extraction failed"));
+            when(path.toString()).thenReturn("complex.nested.field");
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn("invalid");
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("field", result.get(0).getField()); // Should extract last part after dot
+            assertEquals("invalid", result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle empty property path string")
+        void thenHandleEmptyPropertyPathString() {
+            // Given
+            String errorCode = "validation.error";
+            String resolvedMessage = "Validation error occurred";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+
+            // Mock path to throw exception and return empty string
+            when(path.spliterator()).thenThrow(new RuntimeException("Path extraction failed"));
+            when(path.toString()).thenReturn("");
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn("invalid");
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("unknown", result.get(0).getField()); // Should return "unknown" for empty path
+            assertEquals("invalid", result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle null property path string")
+        void thenHandleNullPropertyPathString() {
+            // Given
+            String errorCode = "validation.error";
+            String resolvedMessage = "Validation error occurred";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+
+            // Mock path to throw exception and return null
+            when(path.spliterator()).thenThrow(new RuntimeException("Path extraction failed"));
+            when(path.toString()).thenReturn(null);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn("invalid");
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("unknown", result.get(0).getField()); // Should return "unknown" for null path
+            assertEquals("invalid", result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle message key with newline character")
+        void thenHandleMessageKeyWithNewlineCharacter() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+            String messageWithNewline = "validation.error\nwith.newline";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(messageWithNewline);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
+            assertEquals(messageWithNewline, result.get(0).getErrMsg()); // Should use message as-is (not a key)
+        }
+
+        @Test
+        @DisplayName("Then handle constraint with Email annotation for invalid value inclusion")
+        void thenHandleConstraintWithEmailAnnotation() {
+            // Given
+            String field = "email";
+            String rejectedValue = "invalid-email";
+            String errorCode = "email.invalid";
+            String resolvedMessage = "Invalid email format";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            // Mock constraint descriptor for Email annotation
+            var constraintDescriptor = mock(jakarta.validation.metadata.ConstraintDescriptor.class);
+            var emailAnnotation = mock(java.lang.annotation.Annotation.class);
+            when(emailAnnotation.annotationType()).thenReturn((Class) jakarta.validation.constraints.Email.class);
+            when(constraintDescriptor.getAnnotation()).thenReturn(emailAnnotation);
+            when(constraintDescriptor.getAttributes()).thenReturn(new HashMap<>());
+            when(violation.getConstraintDescriptor()).thenReturn(constraintDescriptor);
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
+        }
+
+        @Test
+        @DisplayName("Then handle constraint descriptor exception")
+        void thenHandleConstraintDescriptorException() {
+            // Given
+            String field = "name";
+            String rejectedValue = "invalid";
+            String errorCode = "validation.error";
+            String resolvedMessage = "Validation error occurred";
+
+            ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+            Path path = mock(Path.class);
+            when(path.toString()).thenReturn(field);
+            when(violation.getPropertyPath()).thenReturn(path);
+            when(violation.getInvalidValue()).thenReturn(rejectedValue);
+            when(violation.getMessage()).thenReturn(errorCode);
+
+            // Mock constraint descriptor to throw exception
+            when(violation.getConstraintDescriptor()).thenThrow(new RuntimeException("Descriptor access failed"));
+
+            Set<ConstraintViolation<?>> violations = new HashSet<>();
+            violations.add(violation);
+
+            ConstraintViolationException exception = new ConstraintViolationException("Validation failed", violations);
+
+            when(messageSource.getMessage(eq(errorCode), any(), isNull(), eq(Locale.getDefault())))
+                    .thenReturn(resolvedMessage);
+
+            // When
+            List<ViolationDTO> result = fieldErrorExtractor.extractErrorObjects(exception);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(field, result.get(0).getField());
+            assertEquals(rejectedValue, result.get(0).getRjctValue());
+            assertEquals(resolvedMessage, result.get(0).getErrMsg());
         }
     }
 }

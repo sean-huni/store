@@ -244,4 +244,108 @@ class JwtServiceEdgeCaseTest {
         // 2. Test with a token that will cause an IllegalArgumentException
         assertFalse(jwtService.isTokenValid("not-even-a-jwt", userDetails));
     }
+
+    @Test
+    @DisplayName("Should handle ExpiredJwtException in isTokenExpired method")
+    void shouldHandleExpiredJwtExceptionInIsTokenExpired() {
+        // Given
+        // Create a token that's already expired
+        when(jwtProperties.getExpiration()).thenReturn(1L); // 1 millisecond
+        String expiredToken = jwtService.generateAccessToken(userDetails);
+
+        // Wait to ensure token is expired
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When/Then
+        // The isTokenValid method should handle the ExpiredJwtException from isTokenExpired
+        assertFalse(jwtService.isTokenValid(expiredToken, userDetails));
+    }
+
+    @Test
+    @DisplayName("Should handle ExpiredJwtException in extractExpiration method")
+    void shouldHandleExpiredJwtExceptionInExtractExpiration() {
+        // Given
+        // Create a token that's already expired
+        when(jwtProperties.getExpiration()).thenReturn(1L); // 1 millisecond
+        String expiredToken = jwtService.generateAccessToken(userDetails);
+
+        // Wait to ensure token is expired
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When/Then
+        // This should throw ExpiredJwtException when trying to extract expiration
+        assertThrows(ExpiredJwtException.class, () -> jwtService.extractClaim(expiredToken, Claims::getExpiration));
+    }
+
+    @Test
+    @DisplayName("Should handle token with whitespace")
+    void shouldHandleTokenWithWhitespace() {
+        // Given
+        String tokenWithWhitespace = "   ";
+
+        // When/Then
+        assertFalse(jwtService.isTokenValid(tokenWithWhitespace, userDetails));
+    }
+
+    @Test
+    @DisplayName("Should handle token validation with expired token in isTokenValid")
+    void shouldHandleTokenValidationWithExpiredTokenInIsTokenValid() {
+        // Given
+        // Create a token that will expire quickly
+        when(jwtProperties.getExpiration()).thenReturn(1L); // 1 millisecond
+        String token = jwtService.generateAccessToken(userDetails);
+
+        // Wait to ensure token is expired
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When/Then
+        // This should return false due to ExpiredJwtException being caught
+        assertFalse(jwtService.isTokenValid(token, userDetails));
+    }
+
+    @Test
+    @DisplayName("Should handle empty string token in extractUsername")
+    void shouldHandleEmptyStringTokenInExtractUsername() {
+        // When/Then
+        assertThrows(IllegalArgumentException.class, () -> jwtService.extractUsername(""));
+    }
+
+    @Test
+    @DisplayName("Should handle null token in extractClaim")
+    void shouldHandleNullTokenInExtractClaim() {
+        // When/Then
+        assertThrows(IllegalArgumentException.class, () -> jwtService.extractClaim(null, Claims::getSubject));
+    }
+
+    @Test
+    @DisplayName("Should handle token with only dots")
+    void shouldHandleTokenWithOnlyDots() {
+        // Given
+        String invalidToken = "...";
+
+        // When/Then
+        assertFalse(jwtService.isTokenValid(invalidToken, userDetails));
+    }
+
+    @Test
+    @DisplayName("Should handle very short invalid token")
+    void shouldHandleVeryShortInvalidToken() {
+        // Given
+        String shortToken = "x";
+
+        // When/Then
+        assertFalse(jwtService.isTokenValid(shortToken, userDetails));
+    }
 }
