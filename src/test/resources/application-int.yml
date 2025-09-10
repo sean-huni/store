@@ -18,4 +18,3 @@ application:
       refreshExpiration: 259200000  # 3 days
       tokenPrefix: "Bearer "
       headerString: "Authorization"
-

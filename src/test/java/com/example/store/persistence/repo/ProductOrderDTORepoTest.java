@@ -20,7 +20,6 @@ import test.config.TestConfig;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -84,32 +83,26 @@ class ProductOrderDTORepoTest {
             return orderRepo.save(newOrder);
         });
 
-        // Find and update existing ProductOrder entities with IDs 1 and 2
-        ProductOrder productOrder1 = productOrderRepo.findById(1L).orElseThrow(() ->
-                new RuntimeException("ProductOrder with ID=1 not found. Pre-loaded data may be missing."));
+        // Clear any existing ProductOrder entities for this product first
+        productOrderRepo.deleteAll();
+        productOrderRepo.flush(); // Ensure deletion is committed
+
+        // Create new ProductOrder entities instead of modifying existing ones
+        ProductOrder productOrder1 = new ProductOrder();
         productOrder1.setProduct(testProduct);
         productOrder1.setOrder(order1);
         productOrder1.setQuantity(2);
         productOrder1.setPrice(BigDecimal.valueOf(19.99));
-        productOrder1.setUpdated(ZonedDateTime.now());
+        // Don't set created/updated - @PrePersist handles this
         productOrderRepo.save(productOrder1);
 
-        ProductOrder productOrder2 = productOrderRepo.findById(2L).orElseThrow(() ->
-                new RuntimeException("ProductOrder with ID=2 not found. Pre-loaded data may be missing."));
+        ProductOrder productOrder2 = new ProductOrder();
         productOrder2.setProduct(testProduct);
         productOrder2.setOrder(order2);
         productOrder2.setQuantity(1);
         productOrder2.setPrice(BigDecimal.valueOf(29.99));
-        productOrder2.setUpdated(ZonedDateTime.now());
+        // Don't set created/updated - @PrePersist handles this
         productOrderRepo.save(productOrder2);
-
-        // Delete any other ProductOrder entities associated with the testProduct
-        List<ProductOrder> existingOrders = productOrderRepo.findProductOrdersByProduct_Id(testProduct.getId());
-        for (ProductOrder po : existingOrders) {
-            if (!po.getId().equals(1L) && !po.getId().equals(2L)) {
-                productOrderRepo.delete(po);
-            }
-        }
     }
 
     @Nested

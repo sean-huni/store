@@ -1,13 +1,15 @@
 plugins {
     id 'java'
     id 'org.graalvm.buildtools.native' version '0.10.6'
-    id 'org.springframework.boot' version '3.4.8'
+    id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.hibernate.orm' version '6.6.26.Final'
     id 'org.liquibase.gradle' version '2.2.0'
     id 'com.diffplug.spotless' version '6.25.0'
     id "org.sonarqube" version "6.2.0.5505"
     id 'org.cyclonedx.bom' version '1.10.0'
     id 'jacoco'
+    id 'checkstyle'
 }
 
 // Define versions
@@ -29,6 +31,8 @@ ext {
     mapstructProcessorVersion = '1.6.3'
     lombokMapstructBindingVersion = '0.2.0'
     caffeineVersion = '3.1.8'
+    flexyPoolVersion = '1.12.0'
+    quickPerfVersion = '1.1.0'
     jjwtVersion = '0.12.6'
     springdocVersion = '2.8.9'
     mockitoCoreVersion = '5.18.0'
@@ -36,6 +40,9 @@ ext {
 
     // JaCoCo versions
     jacocoToolVersion = '0.8.13'
+
+    // Checkstyle version
+    checkstyleVersion = '10.17.0'
 
     // Coverage thresholds
     coverageMinimum = 0.99
@@ -45,7 +52,7 @@ ext {
 apply from: 'jacoco.gradle'
 
 group = 'com.example'
-version = '1.0.2'
+version = '1.0.4'
 
 // Set the JAR file name to a fixed name without version
 bootJar {
@@ -132,6 +139,20 @@ dependencies {
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 
+    // DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    // High-Performance Java Persistence (Avoid N+1 Queries) -> https://a.co/d/6UNWn3h
+    // Flexy-Pool - GitHub: https://github.com/gavlyukovskiy/spring-boot-data-source-decorator
+    implementation "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:${flexyPoolVersion}"
+    implementation "com.github.gavlyukovskiy:flexy-pool-spring-boot-starter:${flexyPoolVersion}"
+    implementation "com.github.gavlyukovskiy:p6spy-spring-boot-starter:${flexyPoolVersion}"
+
+    // QuickPerf - GitHub: https://github.com/quick-perf/quickperf
+    testImplementation "org.quickperf:quick-perf-junit5:${quickPerfVersion}"
+    testImplementation "org.quickperf:quick-perf-springboot2-sql-starter:${quickPerfVersion}"
+
     implementation 'org.liquibase:liquibase-core'
     runtimeOnly 'org.postgresql:postgresql'
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
@@ -142,6 +163,7 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructProcessorVersion}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
     // Test dependencies
     testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
@@ -154,6 +176,13 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructProcessorVersion}"
     testImplementation "org.mockito:mockito-core:${mockitoCoreVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+hibernate {
+    enhancement {
+        enableAssociationManagement = true
+    }
 }
 
 tasks.named('test') {
@@ -205,6 +234,7 @@ graalvmNative {
             buildArgs.add("--gc=epsilon")
             buildArgs.add("-march=native")
             buildArgs.add("--no-fallback")
+            buildArgs.add("-Ob")
 
             // Memory optimization for the build process (JVM running the build)
             buildArgs.add("-J-Xmx12g")  // Increased from 8g to 12g
@@ -243,6 +273,31 @@ java {
 // Disable AOT processing for tests to avoid issues
 tasks.named('processTestAot') {
     enabled = false
+}
+
+// Configure Checkstyle
+checkstyle {
+    toolVersion = checkstyleVersion
+    configFile = file("${project.rootDir}/checkstyle/checkstyle.xml")
+    ignoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
+checkstyleMain {
+    reports {
+        xml.required = true
+        html.required = true
+        sarif.required = false
+    }
+}
+
+checkstyleTest {
+    reports {
+        xml.required = true
+        html.required = true
+        sarif.required = false
+    }
 }
 
 // qualityCheck task is defined in jacoco.gradle

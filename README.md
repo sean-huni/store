@@ -119,7 +119,7 @@ to postgreSQL
 
 `docker compose -f src/test/resources/dc/test-tools.yml down -v --remove-orphans && docker compose -f src/test/resources/dc/test-tools.yml up -d`
 - Execute sonarqube analysis with the following command:
-  `./gradlew sonar -Dsonar.projectKey=Equal-Experts -Dsonar.projectName='Equal-Experts' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_eafffb588bf1d4d9b2c5c6f350254a70bb11793f`
+  `./gradlew sonar -Dsonar.projectKey=Store -Dsonar.projectName='Store' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_3ffa37971fe09500f622ad4c8f388bd66946950b`
 - Sonarque analysis can be found at: [SonarQube](http://localhost:9000)
 - Take note of the Generated Token
 
@@ -523,6 +523,157 @@ docker run --name postgres-store \
   -p 5433:5432 \
   -d postgres:17-alpine
 ```
+
+# SQL Query Optimisations (The N+1 Phenomena)
+
+## What is the N+1 Problem?
+
+The N+1 problem is a common performance issue in ORM frameworks where:
+
+1. **Initial Query (1)**: One query fetches a list of parent entities (e.g., customers)
+2. **Additional Queries (N)**: For each parent entity, a separate query fetches its related entities (e.g., orders)
+
+**Example of N+1 Problem:**
+
+```sql
+-- Initial query (1)
+SELECT *
+FROM customer LIMIT 10;
+
+-- N additional queries (one for each customer)
+SELECT *
+FROM "order"
+WHERE customer_id = 1;
+SELECT *
+FROM "order"
+WHERE customer_id = 2;
+-- ... 8 more queries for each customer
+```
+
+This results in **11 queries** instead of the optimal **2 queries**.
+
+## How This Project Prevents N+1 Queries
+
+### 1. Default Lazy Loading Strategy
+
+For all entities annotated with `FetchType.LAZY` operations, the project enforces lazy loading by default:
+
+```java
+// Customer entity
+@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+private Set<Order> orders = new HashSet<>();
+
+// Order entity
+@ManyToOne(fetch = FetchType.LAZY)
+private Customer customer;
+
+@OneToMany(cascade = CascadeType.ALL, mappedBy = "order", fetch = FetchType.LAZY)
+private final List<ProductOrder> products = new ArrayList<>();
+```
+
+### 2. Selective Eager Loading with @EntityGraph
+
+When related data is needed, we use `@EntityGraph` to fetch it efficiently in a single query:
+
+```java
+
+@Query(value = "from Customer c where c.id = :id")
+@EntityGraph(attributePaths = {"orders"})
+Optional<Customer> findCustomerById(@Param("id") Long id);
+```
+
+**Generated SQL:**
+
+```sql
+SELECT c.*, o.*
+FROM customer c
+         LEFT JOIN "order" o ON c.id = o.customer_id
+WHERE c.id = ?
+```
+
+### 3. Application Configuration Enforcement
+
+The `application.yml` enforces strict lazy loading policies:
+
+```yaml
+spring:
+  jpa:
+    properties:
+      hibernate:
+        # Enforce lazy loading globally
+        enable_lazy_load_no_trans: false
+        # Batch fetching optimization
+        default_batch_fetch_size: 10
+        # Enforce strict lazy loading
+        bytecode:
+          use_reflection_optimizer: false
+    # Ensure lazy loading is default
+    open-in-view: false
+```
+
+### 4. Key Configuration Settings
+
+- **`enable_lazy_load_no_trans: false`**: Prevents lazy loading outside transactions, forcing proper data access
+  patterns
+- **`open-in-view: false`**: Disables the anti-pattern that can hide N+1 problems
+- **`default_batch_fetch_size: 10`**: When lazy loading is necessary, fetch in batches rather than individually
+
+## Best Practices Implemented
+
+### ✅ DO: Use @EntityGraph for Known Related Data
+
+```java
+// When you know you need orders, fetch them eagerly
+@EntityGraph(attributePaths = {"orders"})
+Optional<Customer> findCustomerById(@Param("id") Long id);
+```
+
+### ✅ DO: Keep FetchType.LAZY as Default
+
+```java
+// All relationships default to lazy loading
+@OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
+private final Set<Order> orders = new HashSet<>();
+```
+
+### ❌ DON'T: Use FetchType.EAGER Globally
+
+```java
+// This would cause all queries to fetch orders, even when not needed
+@OneToMany(mappedBy = "customer", fetch = FetchType.EAGER) // ❌ Bad
+private final Set<Order> orders = new HashSet<>();
+```
+
+### ✅ DO: Use Batch Fetching for Unavoidable Lazy Loading
+
+The `default_batch_fetch_size: 10` setting ensures that if lazy loading occurs, it fetches 10 entities at once instead
+of one by one.
+
+## Performance Monitoring
+
+The project includes tools to detect N+1 problems:
+
+1. **P6Spy**: Logs all SQL queries with execution time
+2. **Flexy Pool**: Monitors connection pool usage
+3. **QuickPerf**: Test annotations to detect N+1 queries in tests
+
+```java
+
+@Test
+@ExpectSelect(1)
+    // Ensures only 1 query is executed
+void shouldFetchCustomerWithOrdersInOneQuery() {
+    customerRepo.findCustomerById(1L);
+}
+```
+
+## Verification
+
+The `CustomerRepoTest` demonstrates N+1 prevention:
+
+- Customer with orders is fetched in a single query using `@EntityGraph`
+- Test verifies that all related orders are loaded
+- No additional queries are executed for order access
 
 # Potential Areas of Improvements
 
