@@ -23,3 +23,31 @@ spring:
       ddl-auto: validate
     database: postgresql
     show-sql: false
+
+---
+decorator:
+  datasource:
+    enabled: true
+    datasource-proxy:
+      count-query: true
+      logging: slf4j
+      query:
+        enable-logging: true
+        log-level: debug
+      slow-query:
+        log-level: warn # Warning logs for the Slow Queries.
+
+    flexy-pool:
+      acquisition-strategy:
+        increment-pool:
+          max-overgrow-pool-size: 2
+
+quickperf:
+  sql:
+    display-sql-of-test-method-body: true
+    disable-exactly-same-selects: false
+
+logging:
+  level:
+    org.quickperf: DEBUG
+    net.ttddyy.dsproxy.listener: DEBUG

@@ -22,4 +22,7 @@ public class Order extends AbstractSuperEntity {
     private Customer customer;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "order", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ProductOrder> products = new ArrayList<>();
+
+    // select * from order
+    // left join product on
 }

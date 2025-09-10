@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import test.config.TestConfig;
 
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,9 +75,55 @@ class CustomerRepoTest {
             assertFalse(customers.isEmpty());
 
             // Verify all returned customers have our search term in their name (case-insensitive)
-            for (Customer customer : customers) {
+            for (final Customer customer : customers) {
                 assertTrue(customer.getName().toLowerCase().contains(searchTerm.toLowerCase()), "Customer name '%s' should contain '%s' (case-insensitive)".formatted(customer.getName(), searchTerm));
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("When finding customer by ID (The N+1 Problem)")
+    class WhenFindingCustomerById {
+
+        @Test
+        @DisplayName("Then return customer with orders when customer exists")
+        void thenReturnCustomerWithOrdersWhenCustomerExists() {
+            // Given: Customer ID 13 has multiple orders (2, 7, 43, 61) based on test data
+            final Long customerId = 13L;
+
+            // When: Finding customer by ID
+            final Optional<Customer> customerOptional = customerRepo.findCustomerById(customerId);
+
+            // Then: Verify customer is found
+            assertNotNull(customerOptional);
+            assertTrue(customerOptional.isPresent(), "Customer should be found");
+
+            final Customer customer = customerOptional.get();
+            assertNotNull(customer, "Customer should not be null");
+            assertEquals(customerId, customer.getId(), "Customer ID should match");
+            assertEquals("Miguel VonRueden", customer.getName(), "Customer name should match test data");
+
+            // Verify orders are loaded (EntityGraph should eagerly fetch orders)
+            assertNotNull(customer.getOrders(), "Orders should not be null");
+            assertFalse(customer.getOrders().isEmpty(), "Customer should have orders");
+
+            // Customer 13 has 102 orders in test data based on generated data
+            assertEquals(102, customer.getOrders().size(),
+                    "Customer 13 should have exactly 102 orders based on test data");
+        }
+
+        @Test
+        @DisplayName("Then return empty optional when customer does not exist")
+        void thenReturnEmptyOptionalWhenCustomerDoesNotExist() {
+            // Given: A customer ID that doesn't exist (test data has customers 1-100)
+            final Long nonExistentCustomerId = 999L;
+
+            // When: Finding customer by ID
+            final Optional<Customer> customerOptional = customerRepo.findCustomerById(nonExistentCustomerId);
+
+            // Then: Verify customer is not found
+            assertNotNull(customerOptional);
+            assertFalse(customerOptional.isPresent(), "Customer should not be found for non-existent ID");
         }
     }
 }

@@ -1,9 +1,8 @@
 package com.example.store.service.store.impl;
 
-import com.example.store.component.CustomerSearchProps;
 import com.example.store.dto.CustomerDTO;
-import com.example.store.persistence.entity.Customer;
 import com.example.store.mapper.CustomerMapper;
+import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.service.store.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import java.util.List;
 public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepo customerRepo;
     private final CustomerMapper customerMapper;
-    private final CustomerSearchProps customerSearchProps;
 
     @Cacheable(value = "customers", key = "'all_page_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public List<CustomerDTO> findAllCustomers(final Pageable pageable) {

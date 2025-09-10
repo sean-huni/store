@@ -16,48 +16,73 @@ COPY jacoco.gradle .
 # Copy the source code
 COPY src src
 
-# Set memory options for the JVM running Gradle
+# Set memory options for the JVM running Gradle (build-time only)
 ENV JAVA_OPTS="-Xmx12g -XX:MaxMetaspaceSize=2g"
+# Container-aware build settings
+ENV JAVA_TOOL_OPTIONS="-Duser.timezone=Africa/Johannesburg -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom"
 
 # Make gradlew executable
 RUN chmod +x ./gradlew
 
-# Build the native image
+# Build the native image with container-aware settings
+# Note: Virtual thread settings removed as they can cause issues in native compilation
 RUN ./gradlew nativeCompile \
     -Porg.gradle.java.installations.auto-download=false \
     -Dspring.native.mode=reflection \
     -Dspring.native.verbose=true \
-    -Dorg.gradle.jvmargs="-Xmx12g -XX:MaxMetaspaceSize=2g" \
+    -Dorg.gradle.jvmargs="-Xmx12g -XX:MaxMetaspaceSize=2g -XX:+UseContainerSupport" \
     -Dorg.gradle.workers.max=2 \
     -Dorg.gradle.parallel=false \
     -Dorg.graalvm.nativeimage.imagecode=1 \
-    -Dorg.graalvm.nativeimage.native-image-args="--gc=epsilon -Xmx1g -Xms1g" \
+    -Dorg.graalvm.nativeimage.native-image-args="--gc=epsilon -Xmx1g -Xms1g --enable-monitoring=heapdump,jfr" \
     --no-daemon
 
 # Runtime stage
 FROM alpine:3.19
+
+# Reduce native memory fragmentation in containers
+ENV MALLOC_ARENA_MAX=2
+
+# Add app user for security (following lessons from regular Dockerfile)
+ARG APPLICATION_USER=appuser
+RUN adduser --no-create-home -u 1000 -D $APPLICATION_USER && \
+    # Configure working directory \
+    mkdir /app && chown -R $APPLICATION_USER /app
+
+USER 1000
 
 WORKDIR /app
 
 # Set timezone
 ENV TZ=Africa/Johannesburg
 
-# Install minimal dependencies required for the native executable
+# Switch to root user temporarily for system updates
+USER root
+
+# Install necessary packages (enhanced from regular Dockerfile)
 RUN apk update && \
     apk upgrade && \
-    apk add --no-cache tzdata libc6-compat && \
-    # Set the timezone
+    apk add --no-cache tzdata libc6-compat procps && \
+    # Set the timezone \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo "$TZ" > /etc/timezone
+    echo "$TZ" > /etc/timezone && \
+    # Create directory for potential heap dumps with proper permissions \
+    mkdir -p /tmp && chmod 1777 /tmp
 
-# Copy the native executable from the builder stage
-COPY --from=builder /app/build/native/nativeCompile/store /app/store
+# Copy the native executable from the builder stage with proper ownership
+COPY --from=builder --chown=1000:1000 /app/build/native/nativeCompile/store /app/store
 
 # Make the executable runnable
 RUN chmod +x /app/store
+
+# Switch back to non-root user
+USER 1000
 
 # Expose the application port
 EXPOSE 8080
 
 # Run the native executable
+# Note: Native executables don't use JVM flags, but we can set environment variables
+# for any runtime configuration the application might need
+ENV SPRING_PROFILES_ACTIVE=native
 ENTRYPOINT ["/app/store"]
