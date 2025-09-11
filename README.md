@@ -104,13 +104,12 @@ Feel free to refactor the codebase if necessary. Bad choices were deliberately m
 # Why not H2
 
 PostgreSQL scripts have a slightly different syntax compared to H2 (e.g BigSerial), as a result some script WILL fail
-when switching
-to postgreSQL
+when switching to postgreSQL.
 
 # Decision Record
 
 - Deleted CustomerOrderDTO & OrderCustomerDTO -> No need for an additional truncated DTO objects for fields that can be
-  nullified when field-data is not required, and chosen an alternative way to break circular DTO dependencies
+  nullified when field-data is not required, and chosen an alternative way to break circular DTO dependencies.
 
 # Executing the DevOps pipeline
 
@@ -561,7 +560,7 @@ For all entities annotated with `FetchType.LAZY` operations, the project enforce
 ```java
 // Customer entity
 @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-private Set<Order> orders = new HashSet<>();
+private final Set<Order> orders = new HashSet<>();
 
 // Order entity
 @ManyToOne(fetch = FetchType.LAZY)

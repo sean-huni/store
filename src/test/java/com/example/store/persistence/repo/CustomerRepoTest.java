@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.quickperf.sql.annotation.ExpectSelect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -87,6 +88,7 @@ class CustomerRepoTest {
 
         @Test
         @DisplayName("Then return customer with orders when customer exists")
+        @ExpectSelect(1)
         void thenReturnCustomerWithOrdersWhenCustomerExists() {
             // Given: Customer ID 13 has multiple orders (2, 7, 43, 61) based on test data
             final Long customerId = 13L;
@@ -114,6 +116,7 @@ class CustomerRepoTest {
 
         @Test
         @DisplayName("Then return empty optional when customer does not exist")
+        @ExpectSelect(1)
         void thenReturnEmptyOptionalWhenCustomerDoesNotExist() {
             // Given: A customer ID that doesn't exist (test data has customers 1-100)
             final Long nonExistentCustomerId = 999L;
