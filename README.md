@@ -750,5 +750,5 @@ Paketobuildpacks Inspired by: https://www.youtube.com/watch?v=nesRmaUi4Ts
 # Potential Areas of Improvements
 
 - Use simplified Paketo Buildpacks (or paketo-buildpacks) built-in tool to build the docker-images from Spring Boot
-  Projects. Status:
+  Projects. Status: ✅
 - Complete the .k8/ yml config for both backend & database namespaces, for the k8 deployments.
