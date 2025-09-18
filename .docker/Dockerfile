@@ -1,5 +1,5 @@
 # Dockerfile for Alpine containerization
-FROM eclipse-temurin:24-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 # Set the JAVA_HOME and PATH environment variables
 ENV JAVA_HOME=/opt/java/openjdk
@@ -12,7 +12,7 @@ ENV MALLOC_ARENA_MAX=2
 # Add app user
 ARG APPLICATION_USER=appuser
 RUN adduser --no-create-home -u 1000 -D $APPLICATION_USER && \
-    # Configure working directory
+    # Configure working directory \
     mkdir /app && chown -R $APPLICATION_USER /app
 
 USER 1000

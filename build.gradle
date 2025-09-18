@@ -3,11 +3,11 @@ plugins {
     id 'org.graalvm.buildtools.native' version '0.10.6'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.hibernate.orm' version '6.6.26.Final'
+    // id 'org.hibernate.orm' version '6.7.1.Final'  // Temporarily disabled for Gradle 9.0.0 compatibility
     id 'org.liquibase.gradle' version '2.2.0'
     id 'com.diffplug.spotless' version '6.25.0'
     id "org.sonarqube" version "6.2.0.5505"
-    id 'org.cyclonedx.bom' version '1.10.0'
+    // id 'org.cyclonedx.bom' version '1.11.0'  // Temporarily disabled for Gradle 9.0.0 compatibility
     id 'jacoco'
     id 'checkstyle'
 }
@@ -15,7 +15,7 @@ plugins {
 // Define versions
 ext {
     // Java version
-    javaVersion = 24 // Upgraded to Java 24
+    javaVersion = 25 // Using Java 25 for buildpack compatibility
 
     // Plugin versions
     springBootVersion = '3.4.8'
@@ -179,11 +179,13 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-hibernate {
-    enhancement {
-        enableAssociationManagement = true
-    }
-}
+// Hibernate enhancement disabled due to Gradle 9.0.0 compatibility issue
+// The Hibernate plugin is temporarily disabled for compatibility
+// hibernate {
+//     enhancement {
+//         enableAssociationManagement = true
+//     }
+// }
 
 tasks.named('test') {
     useJUnitPlatform() {
@@ -266,11 +268,14 @@ graalvmNative {
 
 // Ensure Java compatibility
 java {
-    sourceCompatibility = JavaVersion.VERSION_24
-    targetCompatibility = JavaVersion.VERSION_24
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
-// Disable AOT processing for tests to avoid issues
+// Disable AOT processing to avoid GraalVM native image agent issues with GraalVM Java 25
+tasks.named('processAot') {
+    enabled = false
+}
 tasks.named('processTestAot') {
     enabled = false
 }
@@ -298,6 +303,15 @@ checkstyleTest {
         html.required = true
         sarif.required = false
     }
+}
+
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-tiny'
+    imageName = "${project.name}:${project.version}"
+    environment = [
+            //     'BP_NATIVE_IMAGE': 'true',   // For native images, uncomment the following:
+            'BP_JVM_VERSION': '25'
+    ]
 }
 
 // qualityCheck task is defined in jacoco.gradle

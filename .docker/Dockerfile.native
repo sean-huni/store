@@ -2,7 +2,7 @@
 # Based on GraalVM CE 24.0.2 as specified in .sdkmanrc
 
 # Build stage
-FROM ghcr.io/graalvm/graalvm-community:24.0.2 AS builder
+FROM ghcr.io/graalvm/graalvm-community:25.0.0 AS builder
 
 WORKDIR /app
 

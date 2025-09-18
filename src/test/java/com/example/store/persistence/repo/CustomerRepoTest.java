@@ -110,8 +110,7 @@ class CustomerRepoTest {
             assertFalse(customer.getOrders().isEmpty(), "Customer should have orders");
 
             // Customer 13 has 102 orders in test data based on generated data
-            assertEquals(102, customer.getOrders().size(),
-                    "Customer 13 should have exactly 102 orders based on test data");
+            assertEquals(102, customer.getOrders().size(), "Customer 13 should have exactly 102 orders based on test data");
         }
 
         @Test

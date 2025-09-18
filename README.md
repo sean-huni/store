@@ -674,8 +674,81 @@ The `CustomerRepoTest` demonstrates N+1 prevention:
 - Test verifies that all related orders are loaded
 - No additional queries are executed for order access
 
+# Build Packs
+
+## With pack-cli
+
+Configuring & Building with paketobuildpacks commands:
+
+### JVM Image
+
+```shell
+# Set default builder
+pack config default-builder paketobuildpacks/builder-jammy-base
+
+# Build JVM image
+pack build store-app \
+  --builder paketobuildpacks/builder-jammy-base \
+  --env BP_JVM_VERSION=25
+```
+
+### Native Image
+
+```shell
+# Set default builder for native images
+pack config default-builder paketobuildpacks/builder-jammy-tiny
+
+# Build native image
+pack build store-app-native \
+  --builder paketobuildpacks/builder-jammy-tiny \
+  --env BP_NATIVE_IMAGE=true \
+  --env BP_JVM_VERSION=25
+```
+
+## With Spring Boot (Gradlew)
+
+### JVM Image
+
+```shell
+# Build JVM image using Spring Boot buildpacks
+./gradlew bootBuildImage --imageName=store-app
+```
+
+### Native Image
+
+```shell
+# Build native image using Spring Boot buildpacks
+./gradlew bootBuildImage --imageName=store-app-native \
+  -Pnative
+```
+
+### With Custom Configuration
+
+Add the following configuration to your `build.gradle` file:
+
+```gradle
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-base'
+    imageName = "${project.name}:${project.version}"
+    environment = [
+        'BP_JVM_VERSION': '25'
+    ]
+    
+    // For native images, uncomment the following:
+    // builder = 'paketobuildpacks/builder-jammy-tiny'
+    // environment = [
+    //     'BP_NATIVE_IMAGE': 'true',
+    //     'BP_JVM_VERSION': '25'
+    // ]
+}
+```
+
+### Reference
+
+Paketobuildpacks Inspired by: https://www.youtube.com/watch?v=nesRmaUi4Ts
+
 # Potential Areas of Improvements
 
 - Use simplified Paketo Buildpacks (or paketo-buildpacks) built-in tool to build the docker-images from Spring Boot
-  Projects.
+  Projects. Status:
 - Complete the .k8/ yml config for both backend & database namespaces, for the k8 deployments.
