@@ -728,7 +728,7 @@ Add the following configuration to your `build.gradle` file:
 
 ```gradle
 tasks.named('bootBuildImage') {
-    builder = 'paketobuildpacks/builder-jammy-base'
+    builder = 'paketobuildpacks/builder-jammy-tiny'
     imageName = "${project.name}:${project.version}"
     environment = [
         'BP_JVM_VERSION': '25'
