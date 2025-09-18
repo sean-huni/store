@@ -1,18 +1,18 @@
 plugins {
     id 'java'
-    id 'org.graalvm.buildtools.native' version '0.10.6'
-    id 'org.springframework.boot' version '3.5.5'
+    id 'org.graalvm.buildtools.native' version '0.11.0'
+    id 'org.springframework.boot' version '4.0.0-M2'
     id 'io.spring.dependency-management' version '1.1.7'
-    // id 'org.hibernate.orm' version '6.7.1.Final'  // Temporarily disabled for Gradle 9.0.0 compatibility
+    id 'org.hibernate.orm' version '7.1.0.Final'
     id 'org.liquibase.gradle' version '2.2.0'
     id 'com.diffplug.spotless' version '6.25.0'
-    id "org.sonarqube" version "6.2.0.5505"
-    // id 'org.cyclonedx.bom' version '1.11.0'  // Temporarily disabled for Gradle 9.0.0 compatibility
+    id "org.sonarqube" version '6.2.0.5505'
+    id 'org.cyclonedx.bom' version '2.3.0'
     id 'jacoco'
     id 'checkstyle'
 }
 
-// Define versions
+// Defined versions
 ext {
     // Java version
     javaVersion = 25 // Using Java 25 for buildpack compatibility
@@ -181,11 +181,11 @@ dependencies {
 
 // Hibernate enhancement disabled due to Gradle 9.0.0 compatibility issue
 // The Hibernate plugin is temporarily disabled for compatibility
-// hibernate {
-//     enhancement {
-//         enableAssociationManagement = true
-//     }
-// }
+hibernate {
+    enhancement {
+        enableAssociationManagement = true
+    }
+}
 
 tasks.named('test') {
     useJUnitPlatform() {
@@ -305,13 +305,22 @@ checkstyleTest {
     }
 }
 
+// qualityCheck task is defined in jacoco.gradle
+
 tasks.named('bootBuildImage') {
     builder = 'paketobuildpacks/builder-jammy-tiny'
     imageName = "${project.name}:${project.version}"
     environment = [
-            //     'BP_NATIVE_IMAGE': 'true',   // For native images, uncomment the following:
-            'BP_JVM_VERSION': '25'
+            'BP_JVM_VERSION': "${javaVersion}"
     ]
 }
 
-// qualityCheck task is defined in jacoco.gradle
+// For Native Builds
+//tasks.named('bootBuildImage') {
+//    builder = 'paketobuildpacks/builder-jammy-tiny'
+//    imageName = "${project.name}:${project.version}"
+//    environment = [
+//            'BP_NATIVE_IMAGE': 'true',   // For native images
+//            'BP_JVM_VERSION' : "${javaVersion}"
+//    ]
+//}
