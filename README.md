@@ -117,6 +117,7 @@ when switching to postgreSQL.
 -
 
 `docker compose -f src/test/resources/dc/test-tools.yml down -v --remove-orphans && docker compose -f src/test/resources/dc/test-tools.yml up -d`
+
 - Execute sonarqube analysis with the following command:
   `./gradlew sonar -Dsonar.projectKey=Store -Dsonar.projectName='Store' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_3ffa37971fe09500f622ad4c8f388bd66946950b`
 - Sonarque analysis can be found at: [SonarQube](http://localhost:9000)
@@ -674,8 +675,360 @@ The `CustomerRepoTest` demonstrates N+1 prevention:
 - Test verifies that all related orders are loaded
 - No additional queries are executed for order access
 
+# Build Packs
+
+## With pack-cli
+
+Configuring & Building with paketobuildpacks commands:
+
+### JVM Image
+
+```shell
+# Set default builder
+pack config default-builder paketobuildpacks/builder-jammy-base
+
+# Build JVM image
+pack build store-app \
+  --builder paketobuildpacks/builder-jammy-base \
+  --env BP_JVM_VERSION=25
+```
+
+### Native Image
+
+```shell
+# Set default builder for native images
+pack config default-builder paketobuildpacks/builder-jammy-tiny
+
+# Build native image
+pack build store-app-native \
+  --builder paketobuildpacks/builder-jammy-tiny \
+  --env BP_NATIVE_IMAGE=true \
+  --env BP_JVM_VERSION=25
+```
+
+## With Spring Boot (Gradlew)
+
+### JVM Image
+
+```shell
+# Build JVM image using Spring Boot buildpacks
+./gradlew bootBuildImage --imageName=store-app
+```
+
+### Native Image
+
+```shell
+# Build native image using Spring Boot buildpacks
+./gradlew bootBuildImage --imageName=store-app-native \
+  -Pnative
+```
+
+### With Custom Configuration
+
+Add the following configuration to your `build.gradle` file:
+
+```gradle
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-tiny'
+    imageName = "${project.name}:${project.version}"
+    environment = [
+        'BP_JVM_VERSION': '25'
+    ]
+    
+    // For native images, uncomment the following:
+    // builder = 'paketobuildpacks/builder-jammy-tiny'
+    // environment = [
+    //     'BP_NATIVE_IMAGE': 'true',
+    //     'BP_JVM_VERSION': '25'
+    // ]
+}
+```
+
+### Reference
+
+Paketobuildpacks Inspired by: https://www.youtube.com/watch?v=nesRmaUi4Ts
+
 # Potential Areas of Improvements
 
 - Use simplified Paketo Buildpacks (or paketo-buildpacks) built-in tool to build the docker-images from Spring Boot
-  Projects.
+  Projects. Status: ✅
 - Complete the .k8/ yml config for both backend & database namespaces, for the k8 deployments.
+
+## Testing
+
+### Sonarqube
+
+The basis for scanning developer-induced bugs, code-smells & unnecessary complexities. Sonarqube recommendations should
+not be ignored, but seriously considered as part of code review.
+
+### Jacoco
+
+Jacoco is the basis of the code-coverage quality metric. After running unit tests with `./gradlew test jacocoTestReport`
+navigate
+to the `build/reports/jacoco/test/html` & open the `index.html` via the Browser and utilise the visual aid to focus on
+uncovered
+test-cases from the unit tests results.
+
+### Unit Tests
+
+As soon as you pull the code from the repo, execute: `./gradlew clean build` & you should see all the tests pass. If any
+test fails, create a Jira task & assign the task to the responsible to fix the broken unit tests. Unit Tests should be
+tagged with `@Tag("unit")` annotation at the top of the class.
+
+No commenting out unit tests. Unit tests that aren't ready can be marked as `@Disbled` annotation to indicate that the
+test is ignored, and this will show up as warnings during the builds.
+
+### Integration Tests
+
+Integration Tests are generally slower & can impact developer productivity. All tests marked with an `@SpringBootTest`
+should also be marked with an `@Tag("int")` annotation & can be ignored during development, but must never
+be ignored prior to creating a PR (Pull Request). All broken Integration Tests should be fixed.
+
+Checkout the documentation for Tagging Integration Tests:
+
+[JUnit-5 Tagging Tests](https://www.baeldung.com/junit-filtering-tests)
+
+[JUnit-5 Tag Expression](https://junit.org/junit5/docs/current/user-guide/#running-tests-tag-expressions)
+
+## Application Architecture (Monolithic Design)
+
+This is a monolithic Spring Boot application that follows best practices for enterprise application development.
+While it's built as a single deployable unit, it still benefits from following proven architectural principles
+such as the [12-Factor App](https://12factor.net/) methodology, which provides excellent guidance for building
+maintainable, scalable, and cloud-ready applications regardless of their architectural style.
+
+The 12-Factor principles are particularly valuable for ensuring our monolithic application remains:
+
+- **Portable** across different environments
+- **Scalable** through stateless design and proper resource management
+- **Maintainable** with clear separation of concerns and configuration management
+
+Kindly ensure that you familiarise yourself with [The 12 Factor App](https://12factor.net/).
+
+## Manifest
+
+The manifest contains the Bill Of Materials (BOM) which is a comprehensive list of the required dependencies used in
+the Spring Ecosystem.
+
+| Dependency     | Version  |   AS EoL    |   SS EoL    | Last Updated |
+|:---------------|:--------:|:-----------:|:-----------:|:------------:|
+| Graal-CE (JRE) |    25    | 30-Sep-2026 | 30-Sep-2029 | 18-Sep-2025  |
+| Spring Boot    | 4.0.0-M2 | 30-Nov-2025 | 30-Nov-2027 | 18-Sep-2025  |
+| Gradle         |  9.0.0   |     LTS     |     LTS     | 18-Sep-2025  |
+| Gson           | (latest) |      -      |      -      | 18-Sep-2025  |
+
+To further add onto the SBOM, the following dependencies are also included:
+
+- CycloneDX: `./gradlew cyclonedxBom` to generate the SBOM (Software Bill of Materials).
+
+[OSS End of Life](https://endoflife.date)
+[Java Release Roadmap](https://en.wikipedia.org/wiki/Java_version_history)
+
+**End-of-Life** (EoL): Indication of when support for app/module/dependency ends.
+
+**Active support** (AS): Minor versions are actively supported for some time after their initial release. During this
+time, reported bugs and security issues are fixed, and regular point releases are made.
+
+**Security Support** (SS): Only minor releases supported for critical security issues, and releases are no longer made
+on a regular basis.
+
+Ideally, we should ensure that no obsolete framework/dependency versions should be deployed into QA/STRESS/PROD.
+
+## Git Branching Model
+
+Normal flow of code changes between branches.
+`feat-*` -> `dev` -> `int-*` -> `qa-*` -> `stress-*` -> `master`
+
+In the event of a bug that's currently in PROD:
+`hotfix-*` -> `qa-*` -> `stress-*` -> `master`
+
+`hotfix-*` -> `dev`
+
+Following a successful [Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/) we would be
+adopting the same best practices. It's important to spend some time to understand the branching model &
+avoid anti-pattern practices.
+
+There shall be strict branch policies to prevent unauthorised git pushes into the wrong branches, which could
+potentially cause unnecessary headaches.
+
+# Gradle & Spring Boot Version Upgrades
+
+This project has been upgraded to use the latest versions of Java, Spring Boot, and Gradle. Below are the upgrade steps
+and considerations for each component.
+
+## Current Versions
+
+- **Java**: 25 (LTS support and latest features)
+- **Spring Boot**: 4.0.0-M2 (Milestone release with Spring Framework 7.x)
+- **Gradle**: 9.0.0 (Latest stable release with improved performance)
+
+## Java 25 Upgrade
+
+### Prerequisites
+
+- Install Java 25 SDK (OpenJDK or Oracle JDK)
+- Update `JAVA_HOME` environment variable
+- Verify installation: `java -version`
+
+### Configuration Changes
+
+1. Update `build.gradle`:
+   ```gradle
+   ext {
+       javaVersion = 25
+   }
+   
+   java {
+       toolchain {
+           languageVersion = JavaLanguageVersion.of(javaVersion)
+       }
+   }
+   ```
+
+2. Update `.sdkmanrc` (if using SDKMAN):
+   ```
+   java=25-open
+   ```
+
+### Benefits
+
+- Enhanced performance with latest JVM optimizations
+- New language features and API improvements
+- Better compatibility with modern Spring Boot versions
+
+## Spring Boot 4.0.0-M2 Upgrade
+
+### Major Changes
+
+- Requires Java 21+ (we're using Java 25)
+- Built on Spring Framework 7.x
+- Updated dependency management
+- Enhanced native image support
+
+### Configuration Updates
+
+1. Update Spring Boot version in `build.gradle`:
+   ```gradle
+   id 'org.springframework.boot' version '4.0.0-M2'
+   ```
+
+2. Update dependency versions:
+   ```gradle
+   ext {
+       springBootVersion = '4.0.0-M2'
+       springDependencyManagementVersion = '1.1.7'
+   }
+   ```
+
+### Known Issues & Workarounds
+
+- Some plugins temporarily disabled for compatibility:
+  ```gradle
+  // id 'org.hibernate.orm' version '7.1.0.Final'  // Temporarily disabled
+  // id 'org.cyclonedx.bom' version '1.11.0'  // Temporarily disabled
+  ```
+
+### Migration Considerations
+
+- Review deprecated APIs and update code accordingly
+- Test thoroughly as this is a milestone release
+- Update security configurations for Spring Security 7.x changes
+
+## Gradle 9.0.0 Upgrade
+
+### Prerequisites
+
+- Java 11+ required (we're using Java 25)
+- Review plugin compatibility
+
+### Upgrade Steps
+
+1. Update `gradle/wrapper/gradle-wrapper.properties`:
+   ```properties
+   distributionUrl=https\://services.gradle.org/distributions/gradle-9.0.0-bin.zip
+   ```
+
+2. Execute wrapper update command:
+   ```bash
+   ./gradlew wrapper --gradle-version 9.0.0 --distribution-type bin
+   ```
+
+### Performance Improvements
+
+- Faster build times with improved incremental compilation
+- Enhanced dependency resolution
+- Better Kotlin DSL support
+- Improved configuration cache
+
+### Plugin Compatibility
+
+- Some plugins may need updates for Gradle 9.0 compatibility
+- Review and update plugin versions as needed
+- Test all build tasks after upgrade
+
+## Post-Upgrade Verification
+
+### Build Verification
+
+```bash
+# Clean and build the project
+./gradlew clean build
+
+# Run tests
+./gradlew test
+
+# Build native image (if applicable)
+./gradlew nativeCompile
+```
+
+### Docker Image Building
+
+```bash
+# Build JVM image with Java 25
+./gradlew bootBuildImage --imageName=store-app
+
+# Build native image
+./gradlew bootBuildImage --imageName=store-app-native -Pnative
+```
+
+### Health Checks
+
+1. Verify application startup
+2. Check actuator endpoints
+3. Test critical functionality
+4. Monitor memory usage and performance
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Plugin Compatibility**: Some plugins may not support Gradle 9.0 yet
+    - **Solution**: Use compatible versions or temporarily disable non-critical plugins
+
+2. **Dependency Conflicts**: Spring Boot 4.x may have different dependency versions
+    - **Solution**: Use `gradle dependencies` to identify conflicts and update accordingly
+
+3. **Native Image Issues**: GraalVM compatibility with Spring Boot 4.x
+    - **Solution**: Update GraalVM version and review native hints
+
+### Rollback Strategy
+
+If issues arise, you can rollback by reverting:
+
+1. `gradle/wrapper/gradle-wrapper.properties`
+2. Spring Boot version in `build.gradle`
+3. Java version configuration
+
+## Future Considerations
+
+- Monitor Spring Boot 4.x stable release
+- Re-enable disabled plugins when compatible versions are available
+- Consider upgrading to newer Gradle versions as they become available
+- Keep Java version updated with LTS releases
+- Spotless apply for the auto-code formatting.
+
+## Resources
+
+- [Spring Boot 4.0 Migration Guide](https://docs.spring.io/spring-boot/docs/4.0.0-M2/reference/html/)
+- [Gradle 9.0 Release Notes](https://docs.gradle.org/9.0/release-notes.html)
+- [Java 25 Features](https://openjdk.org/projects/jdk/25/)

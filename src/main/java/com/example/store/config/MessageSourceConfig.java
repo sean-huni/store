@@ -12,7 +12,7 @@ public class MessageSourceConfig {
     @Bean
     public MessageSource messageSource() {
         final var messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.setBasename("classpath:messages");
+        messageSource.setBasename("classpath:i18n/messages");
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setCacheSeconds(3600); // Cache for 1 hour
         return messageSource;
