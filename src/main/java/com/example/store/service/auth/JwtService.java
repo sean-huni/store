@@ -103,6 +103,10 @@ public class JwtService {
                 .getPayload();
     }
 
+    public Long getAccessTokenExpiration() {
+        return jwtProperties.getExpiration();
+    }
+
     private SecretKey getSignInKey() {
         final byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);

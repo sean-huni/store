@@ -1025,6 +1025,7 @@ If issues arise, you can rollback by reverting:
 - Re-enable disabled plugins when compatible versions are available
 - Consider upgrading to newer Gradle versions as they become available
 - Keep Java version updated with LTS releases
+- Spotless apply for the auto-code formatting.
 
 ## Resources
 

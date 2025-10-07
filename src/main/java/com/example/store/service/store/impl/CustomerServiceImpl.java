@@ -36,7 +36,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerDTO createCustomer(final CustomerDTO customerDTO) {
         final var customer = customerMapper.toCustomer(customerDTO);
         // Set created and updated times
-        ZonedDateTime now = ZonedDateTime.now();
+        final ZonedDateTime now = ZonedDateTime.now();
         customer.setCreated(now);
         customer.setUpdated(now);
         final var savedCustomer = customerRepo.save(customer);
