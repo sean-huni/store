@@ -10,7 +10,7 @@ import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,8 +52,7 @@ class CustomerControllerIntTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @Autowired
     private CustomerRepo customerRepo;
@@ -73,6 +72,9 @@ class CustomerControllerIntTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Initialize Gson for JSON serialization
+        gson = new Gson();
+        
         // Clean up existing data
         customerRepo.deleteAll();
         userRepo.deleteAll();
@@ -108,11 +110,11 @@ class CustomerControllerIntTest {
 
         final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        final AuthRespDTO authResponse = objectMapper.readValue(result.getResponse().getContentAsString(), AuthRespDTO.class);
+        final AuthRespDTO authResponse = gson.fromJson(result.getResponse().getContentAsString(), AuthRespDTO.class);
 
         authToken = "Bearer " + authResponse.accessToken();
     }
@@ -253,14 +255,14 @@ class CustomerControllerIntTest {
             MvcResult result = mockMvc.perform(post("/customers")
                             .header("Authorization", authToken)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(newCustomer)))
+                            .content(gson.toJson(newCustomer)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.name").value("New Customer"))
                     .andExpect(jsonPath("$.id").isNotEmpty())
                     .andReturn();
 
             // Then
-            CustomerDTO createdCustomer = objectMapper.readValue(
+            CustomerDTO createdCustomer = gson.fromJson(
                     result.getResponse().getContentAsString(), CustomerDTO.class);
 
             Customer savedCustomer = customerRepo.findById(createdCustomer.getId()).orElse(null);
@@ -278,7 +280,7 @@ class CustomerControllerIntTest {
             mockMvc.perform(post("/customers")
                             .header("Authorization", authToken)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidCustomer)))
+                            .content(gson.toJson(invalidCustomer)))
                     .andExpect(status().isBadRequest());
         }
     }

@@ -41,11 +41,16 @@ decorator:
       acquisition-strategy:
         increment-pool:
           max-overgrow-pool-size: 2
+      metrics:
+        reporter:
+          jmx:
+            auto-start: true
 
 quickperf:
   sql:
     display-sql-of-test-method-body: true
     disable-exactly-same-selects: false
+
 
 logging:
   level:

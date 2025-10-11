@@ -8,7 +8,7 @@ import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.service.auth.AuthService;
 import com.example.store.service.auth.JwtService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -37,11 +37,10 @@ class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @MockitoBean
-    private AuthService authService;
+    private AuthService authauthService;
 
     @MockitoBean
     private JwtService jwtService;
@@ -62,6 +61,9 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Initialize Gson for JSON serialization
+        gson = new Gson();
+        
         // Setup common test data
         authRespDTO = AuthRespDTO.builder()
                 .accessToken("test-access-token")
@@ -77,12 +79,12 @@ class AuthControllerTest {
         // Given
         final RegReqDTO regReqDTO = new RegReqDTO("John", "Doe", "john.doe@example.com", "password123");
 
-        when(authService.register(any(RegReqDTO.class))).thenReturn(authRespDTO);
+        when(authauthService.register(any(RegReqDTO.class))).thenReturn(authRespDTO);
 
         // When/Then
         mockMvc.perform(post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(regReqDTO)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(regReqDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("test-access-token"))
                 .andExpect(jsonPath("$.refreshToken").value("test-refresh-token"))
@@ -96,12 +98,12 @@ class AuthControllerTest {
         // Given
         final AuthReqDTO authReqDTO = new AuthReqDTO("john.doe@example.com", "password123");
 
-        when(authService.authenticate(any(AuthReqDTO.class))).thenReturn(authRespDTO);
+        when(authauthService.authenticate(any(AuthReqDTO.class))).thenReturn(authRespDTO);
 
         // When/Then
         mockMvc.perform(post("/auth/authenticate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authReqDTO)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(authReqDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("test-access-token"))
                 .andExpect(jsonPath("$.refreshToken").value("test-refresh-token"))
@@ -115,11 +117,11 @@ class AuthControllerTest {
         // Given
         final RefreshTokenReqDTO refreshTokenReqDTO = new RefreshTokenReqDTO("test-refresh-token");
 
-        when(authService.refreshToken(any(RefreshTokenReqDTO.class))).thenReturn(authRespDTO);
+        when(authauthService.refreshToken(any(RefreshTokenReqDTO.class))).thenReturn(authRespDTO);
 
         // When/Then
         mockMvc.perform(post("/auth/refresh-token")
-                .header("Authorization", "Bearer test-refresh-token"))
+                        .header("Authorization", "Bearer test-refresh-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("test-access-token"))
                 .andExpect(jsonPath("$.refreshToken").value("test-refresh-token"))

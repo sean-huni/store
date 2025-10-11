@@ -11,7 +11,7 @@ import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.persistence.repo.ProductRepo;
 import com.example.store.persistence.repo.UserRepo;
 import com.example.store.service.store.OrderService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,15 +68,17 @@ class EmptyOrdersControllerIntTest {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
-    @Autowired
-    private ObjectMapper objectMapper;
+
+    private Gson gson;
     
     private User testUser;
     private String authToken;
 
     @BeforeEach
     void setUp() throws Exception {
+        // Initialize Gson for JSON serialization
+        gson = new Gson();
+        
         // Clear the cache first
         orderService.clearOrdersCache();
         
@@ -115,11 +117,11 @@ class EmptyOrdersControllerIntTest {
         
         MvcResult result = mockMvc.perform(post("/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
-        
-        AuthRespDTO authResponse = objectMapper.readValue(
+
+        AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
         authToken = "Bearer " + authResponse.accessToken();

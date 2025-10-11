@@ -8,7 +8,7 @@ import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.service.store.OrderService;
 import com.example.store.util.PageableBuilder;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -43,7 +43,7 @@ class OrderControllerTests {
 
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Gson gson = new Gson();
 
     @Mock
     private OrderRepo orderRepo;
@@ -108,7 +108,7 @@ class OrderControllerTests {
 
         mockMvc.perform(post("/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(orderDTO)))
+                        .content(gson.toJson(orderDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.description").value("Test Order"))
                 .andExpect(jsonPath("$.customerId").value(1L));

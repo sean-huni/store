@@ -1,28 +1,33 @@
 package com.example.store.persistence.repo;
 
 import com.example.store.persistence.entity.Customer;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.quickperf.sql.annotation.ExpectSelect;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StopWatch;
 import test.config.TestConfig;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @Tag("repo")
 @ActiveProfiles("db")
@@ -30,9 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Import(TestConfig.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
+@Slf4j
 @DisplayName("CustomerRepo - {Int}")
 class CustomerRepoTest {
-    @Autowired
+    @MockitoSpyBean
     private CustomerRepo customerRepo;
 
     private static final int PAGE_SIZE = 10;
@@ -88,13 +94,12 @@ class CustomerRepoTest {
 
         @Test
         @DisplayName("Then return customer with orders when customer exists")
-        @ExpectSelect(1)
         void thenReturnCustomerWithOrdersWhenCustomerExists() {
             // Given: Customer ID 13 has multiple orders (2, 7, 43, 61) based on test data
             final Long customerId = 13L;
 
             // When: Finding customer by ID
-            final Optional<Customer> customerOptional = customerRepo.findCustomerById(customerId);
+            final Optional<Customer> customerOptional = customerRepo.findCustomerByIdWithOrders(customerId);
 
             // Then: Verify customer is found
             assertNotNull(customerOptional);
@@ -114,18 +119,26 @@ class CustomerRepoTest {
         }
 
         @Test
-        @DisplayName("Then return empty optional when customer does not exist")
-        @ExpectSelect(1)
+        @DisplayName("Then return empty optional when customer that does not exist")
+        @Timeout(value = 88, unit = TimeUnit.MILLISECONDS)
         void thenReturnEmptyOptionalWhenCustomerDoesNotExist() {
             // Given: A customer ID that doesn't exist (test data has customers 1-100)
             final Long nonExistentCustomerId = 999L;
 
-            // When: Finding customer by ID
-            final Optional<Customer> customerOptional = customerRepo.findCustomerById(nonExistentCustomerId);
+            // When: Finding customer by ID using the spied repository
+            final StopWatch stopWatch = new StopWatch("Return empty optional non-existing customer");
+            stopWatch.start();
+            final Optional<Customer> customerOptional = customerRepo.findCustomerByIdWithOrders(nonExistentCustomerId);
+            stopWatch.stop();
+
+            log.info(stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
 
             // Then: Verify customer is not found
             assertNotNull(customerOptional);
             assertFalse(customerOptional.isPresent(), "Customer should not be found for non-existent ID");
+
+            // Verify that the method was called exactly once
+            verify(customerRepo, times(1)).findCustomerByIdWithOrders(nonExistentCustomerId);
         }
     }
 }

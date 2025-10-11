@@ -1,7 +1,7 @@
 package com.example.store.dto;
 
-import com.google.gson.annotations.JsonAdapter;
 import com.example.store.config.adapter.ZonedDateTimeBiSerializer;
+import com.google.gson.annotations.JsonAdapter;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import lombok.Data;

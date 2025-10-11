@@ -1,13 +1,15 @@
 package com.example.store.controller;
 
 import com.example.store.component.CustomerSearchProps;
+import com.example.store.config.GsonConfig;
+import com.example.store.config.adapter.ZonedDateTimeBiSerializer;
 import com.example.store.dto.CustomerDTO;
 import com.example.store.mapper.CustomerMapper;
 import com.example.store.persistence.entity.Customer;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.service.store.CustomerService;
 import com.example.store.util.PageableBuilder;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -36,23 +38,23 @@ class CustomerControllerTests {
 
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Gson gson = new GsonConfig(new ZonedDateTimeBiSerializer()).gson();
 
     @Mock
     private CustomerRepo customerRepo;
-    
+
     @Mock
     private CustomerMapper customerMapper;
-    
+
     @Mock
     private CustomerService customerService;
-    
+
     @Mock
     private CustomerSearchProps customerSearchProps;
-    
+
     @Mock
     private PageableBuilder pageableBuilder;
-    
+
     @InjectMocks
     private CustomerController customerController;
 
@@ -61,7 +63,7 @@ class CustomerControllerTests {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(customerController).build();
-        
+
         customer = new Customer();
         customer.setName("John Doe");
         customer.setId(1L);
@@ -72,12 +74,12 @@ class CustomerControllerTests {
     void testCreateCustomer() throws Exception {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setName("John Doe");
-        
+
         when(customerService.createCustomer(any(CustomerDTO.class))).thenReturn(customerDTO);
 
         mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customer)))
+                        .content(gson.toJson(customer)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("John Doe"));
     }
@@ -87,23 +89,23 @@ class CustomerControllerTests {
     void testGetAllCustomers() throws Exception {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setName("John Doe");
-        
+
         // Set up pageableBuilder mock
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.Pageable.ofSize(10);
         when(customerSearchProps.getLimit()).thenReturn(20);
         when(customerSearchProps.getSortField()).thenReturn("name");
         when(customerSearchProps.getDirection()).thenReturn("asc");
-        
+
         // Use specific values instead of matchers
         when(pageableBuilder.buildPageable(
-                null, 
-                null, 
-                null, 
-                null, 
-                20, 
-                "name", 
+                null,
+                null,
+                null,
+                null,
+                20,
+                "name",
                 "asc")).thenReturn(pageable);
-        
+
         // Set up customerService mock
         when(customerService.findAllCustomers(any())).thenReturn(List.of(customerDTO));
 

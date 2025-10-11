@@ -5,6 +5,7 @@ import com.example.store.dto.auth.req.RefreshTokenReqDTO;
 import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.service.auth.AuthService;
+import com.example.store.validation.BearerToken;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +31,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public AuthRespDTO refreshToken(final @Valid @RequestHeader("Authorization") RefreshTokenReqDTO refreshToken) {
-        return authenticationService.refreshToken(refreshToken);
+    public AuthRespDTO refreshToken(final @Valid @BearerToken @RequestHeader("Authorization") String authorizationHeader) {
+        // Extract the token from "Bearer {token}" format (validation is handled by @BearerToken)
+        final String token = authorizationHeader.substring("Bearer ".length());
+        return authenticationService.refreshToken(new RefreshTokenReqDTO(token));
     }
 }

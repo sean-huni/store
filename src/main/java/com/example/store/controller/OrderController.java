@@ -33,13 +33,15 @@ public class OrderController {
     private final PageableBuilder pageableBuilder;
 
     @GetMapping
+    @SuppressWarnings("checkstyle:MagicNumber")
     public List<OrderDTO> findOrders(
             @RequestParam(required = false) @Min(value = 0, message = "global.400.006") final Integer page,
             @RequestParam(required = false) @Min(value = 5, message = "global.400.005") final Integer limit,
             @RequestParam(required = false) final String sortBy,
             @RequestParam(required = false) final SortEnumDTO sortDir) {
 
-        final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir, globalSearchProps.getLimit(),
+        final Pageable pageable = pageableBuilder.buildPageable(page, limit, sortBy, sortDir,
+                globalSearchProps.getLimit(),
                 globalSearchProps.getSortField(),
                 globalSearchProps.getDirection()
         );

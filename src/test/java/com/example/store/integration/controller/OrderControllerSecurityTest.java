@@ -12,7 +12,7 @@ import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -46,14 +47,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @Testcontainers
 @ActiveProfiles("int")
-@org.springframework.context.annotation.Import(IntTestConfig.class)
+@Import(IntTestConfig.class)
 class OrderControllerSecurityTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @Autowired
     private OrderRepo orderRepo;
@@ -77,6 +77,9 @@ class OrderControllerSecurityTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Initialize Gson for JSON serialization
+        gson = new Gson();
+        
         // Clean up existing data
         orderRepo.deleteAll();
         customerRepo.deleteAll();
@@ -123,11 +126,11 @@ class OrderControllerSecurityTest {
 
         final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        final AuthRespDTO authResponse = objectMapper.readValue(
+        final AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
         authToken = "Bearer %s".formatted(authResponse.accessToken());
@@ -160,7 +163,7 @@ class OrderControllerSecurityTest {
 
             mockMvc.perform(post("/orders")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newOrder)))
+                            .content(gson.toJson(newOrder)))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -199,7 +202,7 @@ class OrderControllerSecurityTest {
             mockMvc.perform(post("/orders")
                     .header("Authorization", authToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newOrder)))
+                            .content(gson.toJson(newOrder)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").isNotEmpty())
                     .andExpect(jsonPath("$.customerId").value(testCustomer.getId()))

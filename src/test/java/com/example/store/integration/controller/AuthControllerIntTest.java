@@ -6,7 +6,7 @@ import com.example.store.dto.auth.req.RegReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
 import com.example.store.integration.config.IntTestConfig;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +45,7 @@ class AuthControllerIntTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @Autowired
     private UserRepo userRepo;
@@ -72,7 +72,7 @@ class AuthControllerIntTest {
         // When & Then
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(regReqDTO)))
+                        .content(gson.toJson(regReqDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty())
@@ -91,7 +91,7 @@ class AuthControllerIntTest {
         final RegReqDTO regReqDTO = new RegReqDTO("Jane", "Doe", "jane.doe@example.com", "password123");
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(regReqDTO)))
+                        .content(gson.toJson(regReqDTO)))
                 .andExpect(status().isOk());
 
         // Then, authenticate with the created user
@@ -100,7 +100,7 @@ class AuthControllerIntTest {
         // When & Then
         mockMvc.perform(post("/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authReqDTO)))
+                        .content(gson.toJson(authReqDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty())
@@ -118,18 +118,18 @@ class AuthControllerIntTest {
         // Register the user
         MvcResult registerResult = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(regReqDTO)))
+                        .content(gson.toJson(regReqDTO)))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Extract the refresh token from the response
         String responseContent = registerResult.getResponse().getContentAsString();
-        AuthRespDTO authResponse = objectMapper.readValue(responseContent, AuthRespDTO.class);
+        AuthRespDTO authResponse = gson.fromJson(responseContent, AuthRespDTO.class);
         String refreshToken = authResponse.refreshToken();
 
         // When & Then
         mockMvc.perform(post("/auth/refresh-token")
-                        .header("Authorization", refreshToken))
+                        .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").value(refreshToken)) // Same refresh token should be returned
@@ -150,7 +150,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -168,7 +168,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -186,7 +186,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -204,7 +204,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -222,7 +222,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -240,7 +240,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -263,7 +263,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/authenticate")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(authReqDTO)))
+                            .content(gson.toJson(authReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -281,7 +281,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/authenticate")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(authReqDTO)))
+                            .content(gson.toJson(authReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -299,7 +299,7 @@ class AuthControllerIntTest {
             // When & Then
             mockMvc.perform(post("/auth/authenticate")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(authReqDTO)))
+                            .content(gson.toJson(authReqDTO)))
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
@@ -328,7 +328,7 @@ class AuthControllerIntTest {
             // Register the user to get a valid refresh token
             String registerResponse = mockMvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(regReqDTO)))
+                            .content(gson.toJson(regReqDTO)))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 

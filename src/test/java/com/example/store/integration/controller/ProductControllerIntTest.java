@@ -9,7 +9,6 @@ import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.ProductRepo;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import jakarta.persistence.EntityManager;
@@ -53,8 +52,6 @@ class ProductControllerIntTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private ProductRepo productRepo;
@@ -270,7 +267,7 @@ class ProductControllerIntTest {
                     .andReturn();
 
             // Then
-            ProductDTO createdProduct = objectMapper.readValue(
+            ProductDTO createdProduct = customGson.fromJson(
                     result.getResponse().getContentAsString(), ProductDTO.class);
 
             Product savedProduct = productRepo.findById(createdProduct.getId()).orElse(null);

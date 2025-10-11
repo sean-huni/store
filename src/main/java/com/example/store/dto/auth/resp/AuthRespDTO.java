@@ -1,18 +1,9 @@
 package com.example.store.dto.auth.resp;
 
-import com.google.gson.annotations.SerializedName;
-
 public record AuthRespDTO(
-    @SerializedName("access_token")
     String accessToken,
-    
-    @SerializedName("refresh_token")
     String refreshToken,
-    
-    @SerializedName("token_type")
     String tokenType,
-    
-    @SerializedName("expires_in")
     Long expiresIn
 ) {
     // Static builder method to maintain compatibility with existing code
@@ -20,7 +11,7 @@ public record AuthRespDTO(
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private String accessToken;
         private String refreshToken;
         private String tokenType;

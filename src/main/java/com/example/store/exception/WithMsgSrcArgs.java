@@ -16,7 +16,7 @@ public abstract class WithMsgSrcArgs extends RuntimeException {
      *                later retrieval by the {@link #getMessage()} method.
      * @param args    args with error values.
      */
-    WithMsgSrcArgs(String message, Object[] args) {
+    WithMsgSrcArgs(final String message, final Object[] args) {
         super(message);
         this.args = args;
     }

@@ -93,10 +93,28 @@ public class ValidationExceptionHandler {
      * Handles validation exceptions from method parameters
      */
     @ExceptionHandler(HandlerMethodValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
     public ErrorDTO handleHandlerMethodValidation(final HandlerMethodValidationException ex) {
         log.debug("Method parameter validation failed", ex);
+
+        // Check if this is a Bearer token validation failure by examining error messages
+        boolean isBearerTokenValidation = ex.getAllErrors().stream()
+                .anyMatch(error -> {
+                    String defaultMessage = error.getDefaultMessage();
+                    return "auth.401.002".equals(defaultMessage);
+                });
+
+        if (isBearerTokenValidation) {
+            // Return 401 for Bearer token validation failures
+            return createErrorResponse(
+                    HttpStatus.UNAUTHORIZED,
+                    "auth.401.002",
+                    null,
+                    "Invalid or expired refresh token",
+                    null
+            );
+        }
 
         List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
 

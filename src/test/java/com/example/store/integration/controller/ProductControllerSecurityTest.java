@@ -1,6 +1,8 @@
 package com.example.store.integration.controller;
 
 import com.example.store.StoreApp;
+import com.example.store.config.GsonConfig;
+import com.example.store.config.adapter.ZonedDateTimeBiSerializer;
 import com.example.store.dto.ProductDTO;
 import com.example.store.dto.auth.req.AuthReqDTO;
 import com.example.store.dto.auth.resp.AuthRespDTO;
@@ -10,7 +12,7 @@ import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.ProductRepo;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -44,14 +47,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @Testcontainers
 @ActiveProfiles("int")
-@org.springframework.context.annotation.Import(IntTestConfig.class)
+@Import(IntTestConfig.class)
 class ProductControllerSecurityTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @Autowired
     private ProductRepo productRepo;
@@ -71,6 +73,9 @@ class ProductControllerSecurityTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Initialize Gson for JSON serialization
+        gson = new GsonConfig(new ZonedDateTimeBiSerializer()).gson();
+        
         // Clean up existing data
         productRepo.deleteAll();
         userRepo.deleteAll();
@@ -107,11 +112,11 @@ class ProductControllerSecurityTest {
 
         MvcResult result = mockMvc.perform(post("/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        AuthRespDTO authResponse = objectMapper.readValue(
+        AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
         authToken = "Bearer " + authResponse.accessToken();
@@ -144,7 +149,7 @@ class ProductControllerSecurityTest {
 
             mockMvc.perform(post("/products")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(newProduct)))
+                            .content(gson.toJson(newProduct)))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -184,7 +189,7 @@ class ProductControllerSecurityTest {
             mockMvc.perform(post("/products")
                             .header("Authorization", authToken)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(newProduct)))
+                            .content(gson.toJson(newProduct)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.description").value("New Product"))
                     .andExpect(jsonPath("$.sku").isNotEmpty())

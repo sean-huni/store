@@ -14,6 +14,7 @@ import com.example.store.persistence.repo.OrderRepo;
 import com.example.store.persistence.repo.ProductRepo;
 import com.example.store.persistence.repo.UserRepo;
 import com.example.store.service.store.OrderService;
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,7 @@ class OrderControllerIntTest {
     
     // Custom Gson instance that preserves camelCase field names
     private final Gson customGson = new com.google.gson.GsonBuilder()
-            .setFieldNamingPolicy(com.google.gson.FieldNamingPolicy.IDENTITY)
+            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
             .create();
 
     @Autowired
@@ -397,7 +398,7 @@ class OrderControllerIntTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.violations", hasSize(1)))
                     .andExpect(jsonPath("$.violations[0].field").value("productIds"))
-                    .andExpect(jsonPath("$.violations[0].errMsg").value("order.400.001"));
+                    .andExpect(jsonPath("$.violations[0].errMsg").value("Invalid Order. An order should have 1 or more product/s"));
         }
     }
 }

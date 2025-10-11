@@ -10,7 +10,7 @@ import com.example.store.persistence.entity.Role;
 import com.example.store.persistence.entity.User;
 import com.example.store.persistence.repo.CustomerRepo;
 import com.example.store.persistence.repo.UserRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,8 +49,7 @@ class CustomerControllerSecurityTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private Gson gson;
 
     @Autowired
     private CustomerRepo customerRepo;
@@ -70,6 +69,9 @@ class CustomerControllerSecurityTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Initialize Gson for JSON serialization
+        gson = new Gson();
+        
         // Clean up existing data
         customerRepo.deleteAll();
         userRepo.deleteAll();
@@ -105,11 +107,11 @@ class CustomerControllerSecurityTest {
 
         final MvcResult result = mockMvc.perform(post("/auth/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(gson.toJson(authRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        final AuthRespDTO authResponse = objectMapper.readValue(
+        final AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
         authToken = "Bearer " + authResponse.accessToken();
@@ -141,7 +143,7 @@ class CustomerControllerSecurityTest {
 
             mockMvc.perform(post("/customers")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newCustomer)))
+                            .content(gson.toJson(newCustomer)))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -180,7 +182,7 @@ class CustomerControllerSecurityTest {
             mockMvc.perform(post("/customers")
                     .header("Authorization", authToken)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newCustomer)))
+                            .content(gson.toJson(newCustomer)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.name").value("New Customer"))
                     .andExpect(jsonPath("$.id").isNotEmpty());

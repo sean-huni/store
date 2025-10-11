@@ -11,5 +11,5 @@ public interface ProductService {
 
     ProductDTO createProduct(ProductDTO productDTO);
 
-    List<ProductDTO> findAllProducts(final Pageable pageable);
+    List<ProductDTO> findAllProducts(Pageable pageable);
 }

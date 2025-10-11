@@ -30,7 +30,8 @@ public class ZonedDateTimeBiSerializer implements JsonSerializer<ZonedDateTime>,
      * @throws JsonParseException If the JSON element cannot be parsed into a ZonedDateTime.
      */
     @Override
-    public ZonedDateTime deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext ctx) throws JsonParseException {
+    public ZonedDateTime deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext ctx)
+            throws JsonParseException {
         if (jsonElement == null) {
             return null;
         }

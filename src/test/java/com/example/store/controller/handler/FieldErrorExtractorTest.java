@@ -131,9 +131,9 @@ class FieldErrorExtractorTest {
             // Then
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRjctValue());
-            assertEquals("Validation failed", result.get(0).getErrMsg());
+            assertEquals(field, result.getFirst().getField());
+            assertEquals(rejectedValue, result.getFirst().getRjctValue());
+            assertEquals("Validation failed", result.getFirst().getErrMsg());
         }
 
         @Test
@@ -161,7 +161,7 @@ class FieldErrorExtractorTest {
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
             assertEquals(rejectedValue, result.get(0).getRjctValue());
-            assertEquals("Validation failed", result.get(0).getErrMsg());
+            assertEquals("Validation failed", result.getFirst().getErrMsg());
 
             // Verify that getDefaultMessage was called, which means the code tried to check
             // if it starts with "global.400"
@@ -229,9 +229,9 @@ class FieldErrorExtractorTest {
             // Then
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals(field, result.get(0).getField());
-            assertEquals(rejectedValue, result.get(0).getRjctValue());
-            assertEquals(defaultMessage, result.get(0).getErrMsg());
+            assertEquals(field, result.getFirst().getField());
+            assertEquals(rejectedValue, result.getFirst().getRjctValue());
+            assertEquals(defaultMessage, result.getFirst().getErrMsg());
         }
 
         @Test

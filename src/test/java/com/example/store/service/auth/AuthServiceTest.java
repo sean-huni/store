@@ -15,7 +15,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,14 +26,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Locale;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -60,6 +57,9 @@ class AuthServiceTest {
 
     @Mock
     private MessageSource messageSource;
+
+    @Mock
+    private AuthSupportService authSupportService;
 
     @InjectMocks
     private AuthService authService;
@@ -121,11 +121,13 @@ class AuthServiceTest {
     @DisplayName("Should register a new user successfully")
     void shouldRegisterNewUserSuccessfully() {
         // Given
-        when(userRepo.existsByEmail(email)).thenReturn(false);
-        when(passwordEncoder.encode(password)).thenReturn(encodedPassword);
-        when(userRepo.save(any(User.class))).thenReturn(user);
-        when(jwtService.generateAccessToken(any(User.class))).thenReturn(accessToken);
-        when(jwtService.generateRefreshToken(any(User.class))).thenReturn(refreshToken);
+        AuthRespDTO expectedResponse = AuthRespDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(expiration)
+                .build();
+        when(authSupportService.register(regReqDTO)).thenReturn(expectedResponse);
 
         // When
         AuthRespDTO response = authService.register(regReqDTO);
@@ -137,22 +139,15 @@ class AuthServiceTest {
         assertEquals("Bearer", response.tokenType());
         assertEquals(expiration, response.expiresIn());
 
-        // Verify user creation
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepo).save(userCaptor.capture());
-        User savedUser = userCaptor.getValue();
-        assertEquals(email, savedUser.getEmail());
-        assertEquals(encodedPassword, savedUser.getPassword());
-        assertEquals("John", savedUser.getFirstName());
-        assertEquals("Doe", savedUser.getLastName());
-        assertEquals(Role.USER, savedUser.getRole());
+        // Verify the authSupportService.register was called
+        verify(authSupportService).register(regReqDTO);
     }
 
     @Test
     @DisplayName("Should throw exception when registering with existing email")
     void shouldThrowExceptionWhenRegisteringWithExistingEmail() {
         // Given
-        when(userRepo.existsByEmail(email)).thenReturn(true);
+        when(authSupportService.register(regReqDTO)).thenThrow(new EmailAlreadyExistsException("auth.400.011", new String[]{email}));
 
         // When/Then
         EmailAlreadyExistsException exception = assertThrows(
@@ -161,16 +156,19 @@ class AuthServiceTest {
         );
 
         assertEquals("auth.400.011", exception.getMessage());
-        verify(userRepo, never()).save(any(User.class));
+        verify(authSupportService).register(regReqDTO);
     }
 
     @Test
     @DisplayName("Should authenticate user successfully")
     void shouldAuthenticateUserSuccessfully() {
         // Given
-        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
+        UsernamePasswordAuthenticationToken authenticatedToken = new UsernamePasswordAuthenticationToken(user, password, user.getAuthorities());
+        when(authenticationManager.authenticate(authToken)).thenReturn(authenticatedToken);
         when(jwtService.generateAccessToken(user)).thenReturn(accessToken);
         when(jwtService.generateRefreshToken(user)).thenReturn(refreshToken);
+        when(jwtService.getAccessTokenExpiration()).thenReturn(expiration);
 
         // When
         AuthRespDTO response = authService.authenticate(authReqDTO);
@@ -183,9 +181,7 @@ class AuthServiceTest {
         assertEquals(expiration, response.expiresIn());
 
         // Verify authentication
-        verify(authenticationManager).authenticate(
-                new UsernamePasswordAuthenticationToken(email, password)
-        );
+        verify(authenticationManager).authenticate(authToken);
     }
 
     @Test
@@ -208,7 +204,8 @@ class AuthServiceTest {
     @DisplayName("Should throw exception when authenticating non-existent user")
     void shouldThrowExceptionWhenAuthenticatingNonExistentUser() {
         // Given
-        when(userRepo.findByEmail(email)).thenReturn(Optional.empty());
+        final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
+        when(authenticationManager.authenticate(authToken)).thenThrow(new UsernameNotFoundException("User not found"));
 
         // When/Then
         UsernameNotFoundException exception = assertThrows(
@@ -217,34 +214,40 @@ class AuthServiceTest {
         );
 
         assertEquals("User not found", exception.getMessage());
+        verify(authenticationManager).authenticate(authToken);
     }
 
     @Test
     @DisplayName("Should refresh token successfully")
     void shouldRefreshTokenSuccessfully() {
         // Given
-        when(jwtService.extractUsername(refreshToken)).thenReturn(email);
-        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
-        when(jwtService.isTokenValid(refreshToken, user)).thenReturn(true);
-        when(jwtService.generateAccessToken(user)).thenReturn(accessToken);
+        AuthRespDTO expectedResponse = AuthRespDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(expiration)
+                .build();
+        when(authSupportService.refreshToken(refreshTokenReqDTO)).thenReturn(expectedResponse);
 
         // When
         AuthRespDTO response = authService.refreshToken(refreshTokenReqDTO);
 
         // Then
         assertNotNull(response);
+        assertEquals(accessToken, response.accessToken());
         assertEquals(refreshToken, response.refreshToken());
         assertEquals("Bearer", response.tokenType());
         assertEquals(expiration, response.expiresIn());
+
+        // Verify the authSupportService.refreshToken was called
+        verify(authSupportService).refreshToken(refreshTokenReqDTO);
     }
 
     @Test
     @DisplayName("Should throw exception when refreshing with invalid token")
     void shouldThrowExceptionWhenRefreshingWithInvalidToken() {
         // Given
-        when(jwtService.extractUsername(refreshToken)).thenReturn(email);
-        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
-        when(jwtService.isTokenValid(refreshToken, user)).thenReturn(false);
+        when(authSupportService.refreshToken(refreshTokenReqDTO)).thenThrow(new InvalidRefreshTokenException("auth.400.007"));
 
         // When/Then
         InvalidRefreshTokenException exception = assertThrows(
@@ -253,13 +256,14 @@ class AuthServiceTest {
         );
 
         assertEquals("auth.400.007", exception.getMessage());
+        verify(authSupportService).refreshToken(refreshTokenReqDTO);
     }
 
     @Test
     @DisplayName("Should throw exception when refreshing with null username")
     void shouldThrowExceptionWhenRefreshingWithNullUsername() {
         // Given
-        when(jwtService.extractUsername(refreshToken)).thenReturn(null);
+        when(authSupportService.refreshToken(refreshTokenReqDTO)).thenThrow(new InvalidRefreshTokenException("auth.400.006"));
 
         // When/Then
         InvalidRefreshTokenException exception = assertThrows(
@@ -268,14 +272,15 @@ class AuthServiceTest {
         );
 
         assertEquals("auth.400.006", exception.getMessage());
+        verify(authSupportService).refreshToken(refreshTokenReqDTO);
     }
 
     @Test
     @DisplayName("Should throw exception when refreshing with non-existent user")
     void shouldThrowExceptionWhenRefreshingWithNonExistentUser() {
         // Given
-        when(jwtService.extractUsername(refreshToken)).thenReturn(email);
-        when(userRepo.findByEmail(email)).thenReturn(Optional.empty());
+        final String expectedMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
+        when(authSupportService.refreshToken(refreshTokenReqDTO)).thenThrow(new UsernameNotFoundException(expectedMessage));
 
         // When/Then
         UsernameNotFoundException exception = assertThrows(
@@ -284,15 +289,15 @@ class AuthServiceTest {
         );
 
         // Verify the exception message matches what would be returned by the MessageSource
-        String expectedMessage = messageSource.getMessage("auth.400.009", null, "User not found", Locale.getDefault());
         assertEquals(expectedMessage, exception.getMessage());
+        verify(authSupportService).refreshToken(refreshTokenReqDTO);
     }
 
     @Test
     @DisplayName("Should handle general exception during token refresh")
     void shouldHandleGeneralExceptionDuringTokenRefresh() {
         // Given
-        when(jwtService.extractUsername(refreshToken)).thenThrow(new RuntimeException("Some error"));
+        when(authSupportService.refreshToken(refreshTokenReqDTO)).thenThrow(new InvalidRefreshTokenException("auth.400.006"));
 
         // When/Then
         InvalidRefreshTokenException exception = assertThrows(
@@ -301,5 +306,6 @@ class AuthServiceTest {
         );
 
         assertEquals("auth.400.006", exception.getMessage());
+        verify(authSupportService).refreshToken(refreshTokenReqDTO);
     }
 }

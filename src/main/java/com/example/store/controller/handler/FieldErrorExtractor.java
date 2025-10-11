@@ -307,7 +307,7 @@ public class FieldErrorExtractor {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.debug("Failed to extract constraint attributes from violation", e);
         }
 
@@ -318,7 +318,7 @@ public class FieldErrorExtractor {
     /**
      * Checks if the attribute value is a default value that shouldn't be used for interpolation.
      */
-    private boolean isDefaultAttributeValue(String attributeName, Object value) {
+    private boolean isDefaultAttributeValue(final String attributeName, final Object value) {
         // Common default values that indicate the attribute wasn't explicitly set
         return switch (attributeName) {
             case "min" -> Integer.valueOf(0).equals(value);
