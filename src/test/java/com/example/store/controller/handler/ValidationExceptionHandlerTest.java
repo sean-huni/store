@@ -92,10 +92,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getTimestamp());
-            assertEquals(violations, result.getViolations());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.timestamp());
+            assertEquals(violations, result.violations());
         }
     }
 
@@ -129,10 +129,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getTimestamp());
-            assertEquals(violations, result.getViolations());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.timestamp());
+            assertEquals(violations, result.violations());
         }
     }
 
@@ -156,10 +156,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(expectedMessage, result.getMessage());
-            assertEquals("INTERNAL_SERVER_ERROR", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(expectedMessage, result.message());
+            assertEquals("INTERNAL_SERVER_ERROR", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -185,10 +185,10 @@ class ValidationExceptionHandlerTest {
             ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -209,10 +209,10 @@ class ValidationExceptionHandlerTest {
             ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -233,10 +233,10 @@ class ValidationExceptionHandlerTest {
             ErrorDTO result = validationExceptionHandler.handleHandlerMethodValidation(exception);
 
             // Then
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -262,10 +262,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(resolvedMessage, result.getMessage());
-            assertEquals("CONFLICT", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(resolvedMessage, result.message());
+            assertEquals("CONFLICT", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -290,10 +290,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(resolvedMessage, result.getMessage());
-            assertEquals("UNAUTHORIZED", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(resolvedMessage, result.message());
+            assertEquals("UNAUTHORIZED", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -316,10 +316,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Invalid credentials", result.getMessage());
-            assertEquals("UNAUTHORIZED", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Invalid credentials", result.message());
+            assertEquals("UNAUTHORIZED", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -342,10 +342,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Invalid credentials", result.getMessage());
-            assertEquals("UNAUTHORIZED", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Invalid credentials", result.message());
+            assertEquals("UNAUTHORIZED", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -377,11 +377,11 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertEquals(violationDTOs, result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertEquals(violationDTOs, result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -408,11 +408,11 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertEquals(violationDTOs, result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertEquals(violationDTOs, result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -439,11 +439,11 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Validation failed", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNotNull(result.getViolations());
-            assertEquals(violationDTOs, result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Validation failed", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNotNull(result.violations());
+            assertEquals(violationDTOs, result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -469,10 +469,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(resolvedMessage, result.getMessage());
-            assertEquals("NOT_FOUND", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(resolvedMessage, result.message());
+            assertEquals("NOT_FOUND", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -509,10 +509,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(resolvedMessage, result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(resolvedMessage, result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -539,10 +539,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Parameter 'page' has invalid value: 'invalid'", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Parameter 'page' has invalid value: 'invalid'", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -570,10 +570,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -601,10 +601,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 
@@ -639,10 +639,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(localizedMessage, result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(localizedMessage, result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -671,10 +671,10 @@ class ValidationExceptionHandlerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(fallbackMessage, result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(fallbackMessage, result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
 
         @Test
@@ -693,17 +693,17 @@ class ValidationExceptionHandlerTest {
                     new RuntimeException("Original cause")
             );
 
-            // No mock setup needed since messageKey is null and messageSource.getMessage() won't be called
+            // No mock setup needed since messageKey is null and messageSource.message() won't be called
 
             // When
             ErrorDTO result = validationExceptionHandler.handleJsonParseException(exception);
 
             // Then
             assertNotNull(result);
-            assertEquals(fallbackMessage, result.getMessage());
-            assertEquals("BAD_REQUEST", result.getName());
-            assertNull(result.getViolations());
-            assertNotNull(result.getTimestamp());
+            assertEquals(fallbackMessage, result.message());
+            assertEquals("BAD_REQUEST", result.name());
+            assertNull(result.violations());
+            assertNotNull(result.timestamp());
         }
     }
 }

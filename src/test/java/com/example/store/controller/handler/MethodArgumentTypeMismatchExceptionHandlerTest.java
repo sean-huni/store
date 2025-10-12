@@ -61,18 +61,18 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
 
         // Then
         assertNotNull(result);
-        assertEquals("Parameter 'page' has invalid value: 'invalid'", result.getMessage());
-        assertEquals("BAD_REQUEST", result.getName());
-        assertNull(result.getViolations());
-        assertNotNull(result.getTimestamp());
+        assertEquals("Parameter 'page' has invalid value: 'invalid'", result.message());
+        assertEquals("BAD_REQUEST", result.name());
+        assertNull(result.violations());
+        assertNotNull(result.timestamp());
     }
 
     @Test
     @DisplayName("handleMethodArgumentTypeMismatchException should create ErrorDTO with specific message for sortDir parameter")
     void handleMethodArgumentTypeMismatchExceptionShouldCreateErrorDTOWithSpecificMessageForSortDirParameter() {
         // Given
-        String paramName = "sortDir";
-        String paramValue = "invalid";
+        final String paramName = "sortDir";
+        final String paramValue = "invalid";
 
         // Create a mock MethodArgumentTypeMismatchException for sortDir parameter
         MethodArgumentTypeMismatchException exception = mock(MethodArgumentTypeMismatchException.class);
@@ -89,9 +89,9 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
 
         // Then
         assertNotNull(result);
-        assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.getMessage());
-        assertEquals("BAD_REQUEST", result.getName());
-        assertNull(result.getViolations());
-        assertNotNull(result.getTimestamp());
+        assertEquals("Parameter 'sortDir' has invalid value: 'invalid'", result.message());
+        assertEquals("BAD_REQUEST", result.name());
+        assertNull(result.violations());
+        assertNotNull(result.timestamp());
     }
 }

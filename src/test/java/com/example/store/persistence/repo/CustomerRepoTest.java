@@ -65,7 +65,7 @@ class CustomerRepoTest {
                     "Expected at most %d customers, but got %d".formatted(PAGE_SIZE, customers.size()));
 
             // Verify all returned customers have our search term in their name
-            for (Customer customer : customers) {
+            for (final Customer customer : customers) {
                 assertTrue(customer.getName().toLowerCase().contains(searchTerm.toLowerCase()), "Customer name '%s' should contain '%s'".formatted(customer.getName(), searchTerm));
             }
         }

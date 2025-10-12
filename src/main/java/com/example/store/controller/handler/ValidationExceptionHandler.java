@@ -37,6 +37,8 @@ public class ValidationExceptionHandler {
     private static final String GLOBAL_ERROR_CODE = "global.400.000";
     private static final Pattern QUOTED_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"");
     public static final String AUTH_ERROR_401_002 = "auth.401.002";
+    public static final String GLOBAL_400_001 = "global.400.001";
+    public static final String DFLT_MSG_VALIDATION_FAILED = "Validation failed";
 
     private final MessageSource messageSource;
     private final FieldErrorExtractor fieldErrorExtractor;
@@ -47,10 +49,6 @@ public class ValidationExceptionHandler {
     private ErrorDTO createErrorResponse(final HttpStatus status, final String messageKey,
                                          final Object[] args, final String defaultMessage,
                                          final List<ViolationDTO> violations) {
-        final ErrorDTO errorDTO = new ErrorDTO();
-
-        // Set the name to the status name (e.g., "BAD_REQUEST")
-        errorDTO.setName(status.name());
 
         // Resolve the message using the messageKey and args
         final Locale locale = LocaleContextHolder.getLocale();
@@ -58,15 +56,7 @@ public class ValidationExceptionHandler {
                 ? messageSource.getMessage(messageKey, args, defaultMessage, locale)
                 : defaultMessage;
 
-        errorDTO.setMessage(message);
-
-        // Set the violations
-        errorDTO.setViolations(violations);
-
-        // Set the timestamp to the current time
-        errorDTO.setTimestamp(ZonedDateTime.now());
-
-        return errorDTO;
+        return new ErrorDTO(status.name(), message, violations, ZonedDateTime.now());
     }
 
     /**
@@ -83,9 +73,9 @@ public class ValidationExceptionHandler {
 
         return createErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "global.400.001",
+                GLOBAL_400_001,
                 null,
-                "Validation failed",
+                DFLT_MSG_VALIDATION_FAILED,
                 violations
         );
     }
@@ -121,9 +111,9 @@ public class ValidationExceptionHandler {
 
         return createErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "global.400.001",
+                GLOBAL_400_001,
                 null,
-                "Validation failed",
+                DFLT_MSG_VALIDATION_FAILED,
                 violations
         );
     }
@@ -141,9 +131,9 @@ public class ValidationExceptionHandler {
 
         return createErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "global.400.001",
+                GLOBAL_400_001,
                 null,
-                "Validation failed",
+                DFLT_MSG_VALIDATION_FAILED,
                 violations
         );
     }

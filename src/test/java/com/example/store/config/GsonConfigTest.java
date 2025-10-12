@@ -53,15 +53,15 @@ class GsonConfigTest {
         // Then
         assertNotNull(json);
         assertNotNull(deserializedErrorDTO);
-        assertEquals(errorDTO.getName(), deserializedErrorDTO.getName());
-        assertEquals(errorDTO.getMessage(), deserializedErrorDTO.getMessage());
-        assertEquals(errorDTO.getViolations().size(), deserializedErrorDTO.getViolations().size());
+        assertEquals(errorDTO.name(), deserializedErrorDTO.name());
+        assertEquals(errorDTO.message(), deserializedErrorDTO.message());
+        assertEquals(errorDTO.violations().size(), deserializedErrorDTO.violations().size());
 
         // Compare the timestamps - they should be equal after serialization and deserialization
         // We're comparing the string representation because ZonedDateTime equality can be tricky
         assertEquals(
-                errorDTO.getTimestamp().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
-                deserializedErrorDTO.getTimestamp().format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                errorDTO.timestamp().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
+                deserializedErrorDTO.timestamp().format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
         );
     }
 

@@ -87,21 +87,11 @@ public class FieldErrorExtractor {
      * @return a ViolationDTO representing the field error
      */
     private ViolationDTO convertFieldErrorToViolationDTO(final FieldError fieldError) {
-        final ViolationDTO violationDTO = new ViolationDTO();
-        violationDTO.setField(fieldError.getField());
-        violationDTO.setRjctValue(formatRejectedValue(fieldError.getRejectedValue()));
-
         // Resolve the message using MessageSource with proper locale
         final String defaultMessage = fieldError.getDefaultMessage();
         final String resolvedMessage = resolveErrorMessage(defaultMessage, fieldError.getArguments());
-        violationDTO.setErrMsg(resolvedMessage);
 
-        // Optionally set error code if the message was a key
-        if (isMessageKey(defaultMessage)) {
-            violationDTO.setErrCode(defaultMessage);
-        }
-
-        return violationDTO;
+        return new ViolationDTO(fieldError.getField(), formatRejectedValue(fieldError.getRejectedValue()), resolvedMessage, isMessageKey(defaultMessage) ? defaultMessage : null);
     }
 
     /**
@@ -111,21 +101,11 @@ public class FieldErrorExtractor {
      * @return a ViolationDTO representing the message source resolvable
      */
     private ViolationDTO convertMessageSourceResolvableToViolationDTO(final MessageSourceResolvable resolvable) {
-        final ViolationDTO violationDTO = new ViolationDTO();
-        violationDTO.setField(GLOBAL_FIELD);
-        violationDTO.setRjctValue(NULL_VALUE);
-
         // Resolve the message using MessageSource with proper locale
         final String defaultMessage = resolvable.getDefaultMessage();
         final String resolvedMessage = resolveErrorMessage(defaultMessage, resolvable.getArguments());
-        violationDTO.setErrMsg(resolvedMessage);
 
-        // Optionally set error code if the message was a key
-        if (isMessageKey(defaultMessage)) {
-            violationDTO.setErrCode(defaultMessage);
-        }
-
-        return violationDTO;
+        return new ViolationDTO(GLOBAL_FIELD, NULL_VALUE, resolvedMessage, isMessageKey(defaultMessage) ? defaultMessage : null);
     }
 
     /**
@@ -135,23 +115,12 @@ public class FieldErrorExtractor {
      * @return a ViolationDTO representing the constraint violation
      */
     private ViolationDTO convertConstraintViolationToViolationDTO(final ConstraintViolation<?> violation) {
-        final ViolationDTO violationDTO = new ViolationDTO();
-
-        // Extract proper field name from property path
-        violationDTO.setField(extractFieldName(violation.getPropertyPath()));
-        violationDTO.setRjctValue(formatRejectedValue(violation.getInvalidValue()));
 
         // Resolve the message using MessageSource with proper locale
         final String message = violation.getMessage();
         final String resolvedMessage = resolveErrorMessage(message, extractConstraintArguments(violation));
-        violationDTO.setErrMsg(resolvedMessage);
 
-        // Optionally set error code if the message was a key
-        if (isMessageKey(message)) {
-            violationDTO.setErrCode(message);
-        }
-
-        return violationDTO;
+        return new ViolationDTO(extractFieldName(violation.getPropertyPath()), formatRejectedValue(violation.getInvalidValue()), resolvedMessage, isMessageKey(message) ? message : null);
     }
 
     /**
@@ -214,6 +183,7 @@ public class FieldErrorExtractor {
 
         // Truncate very long values for readability
         if (stringValue.length() > MAX_VALUE_LENGTH) {
+            log.debug("Rejected value '{}' for field '{}'", stringValue, FIELD_UNKNOWN);
             return "%s...".formatted(stringValue.substring(0, MAX_VALUE_LENGTH - 3));
         }
 

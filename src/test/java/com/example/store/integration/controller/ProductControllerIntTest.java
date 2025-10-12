@@ -125,7 +125,7 @@ class ProductControllerIntTest {
 
             authToken = "Bearer %s".formatted(accessToken);
             log.debug("[DEBUG_LOG] Auth token set to: {}", authToken);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.debug("[DEBUG_LOG] Failed to extract access token: {}", e.getMessage());
             authToken = null;
         }

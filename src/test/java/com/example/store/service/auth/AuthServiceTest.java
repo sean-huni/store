@@ -150,7 +150,7 @@ class AuthServiceTest {
         when(authSupportService.register(regReqDTO)).thenThrow(new EmailAlreadyExistsException("auth.400.011", new String[]{email}));
 
         // When/Then
-        EmailAlreadyExistsException exception = assertThrows(
+        final EmailAlreadyExistsException exception = assertThrows(
                 EmailAlreadyExistsException.class,
                 () -> authService.register(regReqDTO)
         );

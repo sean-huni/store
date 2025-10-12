@@ -35,24 +35,12 @@ public class ErrorRespFactory {
                            final Object[] args, final String defaultMessage,
                            final List<ViolationDTO> violations) {
 
-        ErrorDTO errorDTO = new ErrorDTO();
-
-        // Set the name to the status name (e.g., "BAD_REQUEST")
-        errorDTO.setName(status.name());
-
         // Resolve the message using the messageKey and args
-        Locale locale = LocaleContextHolder.getLocale();
-        String message = messageKey != null
+        final Locale locale = LocaleContextHolder.getLocale();
+        final String message = messageKey != null
                 ? messageSource.getMessage(messageKey, args, defaultMessage, locale)
                 : defaultMessage;
-        errorDTO.setMessage(message);
 
-        // Set the violations
-        errorDTO.setViolations(violations);
-
-        // Set the timestamp to the current time
-        errorDTO.setTimestamp(ZonedDateTime.now());
-
-        return errorDTO;
+        return new ErrorDTO(status.name(), message, violations, ZonedDateTime.now());
     }
 }

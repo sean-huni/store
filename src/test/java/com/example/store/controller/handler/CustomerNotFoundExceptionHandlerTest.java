@@ -56,9 +56,9 @@ class CustomerNotFoundExceptionHandlerTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(resolvedMessage, result.getMessage());
-        assertEquals("NOT_FOUND", result.getName());
-        assertNull(result.getViolations());
-        assertNotNull(result.getTimestamp());
+        assertEquals(resolvedMessage, result.message());
+        assertEquals("NOT_FOUND", result.name());
+        assertNull(result.violations());
+        assertNotNull(result.timestamp());
     }
 }
