@@ -2,6 +2,25 @@
 
 The Store application keeps track of customers and orders in a database.
 
+## About
+
+This project demonstrates modern Java enterprise application development using Spring Boot 4.x, GraalVM native images,
+and advanced testing strategies. It serves as a comprehensive example of best practices in microservice architecture,
+database optimization, and cloud-native deployment.
+
+## Author & Maintainer
+
+**Project Maintainer**: [Your Name/Organization]
+
+- **Website**: [https://your-website.com](https://your-website.com)
+- **Documentation**: [https://your-docs-site.com](https://your-docs-site.com)
+- **Support**: [support@your-domain.com](mailto:support@your-domain.com)
+
+For technical questions, feature requests, or contributions, please visit
+our [GitHub repository](https://github.com/your-username/store-application) or contact us through the channels above.
+
+**Last Updated**: December 2024
+
 # Assumptions
 
 This README assumes you're using a posix environment. It's possible to run this on Windows as well:
@@ -23,14 +42,17 @@ You can start the PostgreSQL instance like this:
 docker run -d \
   --name postgres \
   --restart always \
-  -e POSTGRES_USER=admin \
-  -e POSTGRES_PASSWORD=admin \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=store \
   -v postgres:/var/lib/postgresql/data \
   -p 5433:5432 \
-  postgres:16.2 \
+  postgres:17-alpine \
   postgres -c wal_level=logical
 ```
+
+**Note**: The credentials have been updated to use `postgres:postgres` for consistency with the application
+configuration and the PostgreSQL container now uses the alpine variant for better performance.
 
 # Running the application
 
@@ -182,13 +204,47 @@ build/native/nativeCompile/store --spring.profiles.active=dev --DB_HOST=localhos
 
 ## Native Image Configuration
 
-The native image is configured with:
+The native image is configured with advanced optimizations:
 
-- Support for Java 24 virtual threads
-- HTTP/HTTPS protocol support
-- Reflection configuration for Spring Boot components
-- Resource inclusion for configuration files
-- Memory optimization settings
+### Virtual Threads & Performance Features
+
+- **Java 25 Virtual Threads**: Full support with `--enable-preview` flag
+- **HTTP/HTTPS Protocol Support**: Built-in networking capabilities
+- **Native Architecture Optimization**: `-march=native` for hardware-specific optimizations
+- **Epsilon GC**: Zero-allocation garbage collector for optimal performance
+
+### Build Arguments
+
+```gradle
+graalvmNative {
+    binaries {
+        main {
+            imageName = "store"
+            buildArgs.addAll([
+                "--enable-preview",                    // Virtual threads support
+                "--enable-url-protocols=http,https",   // Network protocols
+                "--initialize-at-build-time=org.slf4j,ch.qos.logback", // Logging optimization
+                "-H:+ReportExceptionStackTraces",      // Better debugging
+                "-H:+AddAllCharsets",                  // Character set support
+                "--gc=epsilon",                        // Zero-allocation GC
+                "-march=native",                       // Hardware optimization
+                "--no-fallback",                       // Pure native image
+                "-Ob",                                 // Optimized build
+                "-J-Xmx12g",                          // Build memory (12GB)
+                "-J-XX:MaxMetaspaceSize=2g",          // Metaspace memory
+                "-H:+UnlockExperimentalVMOptions"      // Experimental features
+            ])
+        }
+    }
+}
+```
+
+### Memory & Resource Management
+
+- **Build Memory**: 12GB heap allocation during native image compilation
+- **Metaspace**: 2GB dedicated metaspace memory
+- **Resource Inclusion**: Automatic inclusion of configuration files
+- **Reflection Configuration**: Pre-configured for Spring Boot components
 
 If you encounter issues with the native image, you can run the application with the agent to generate additional
 configuration:
@@ -723,24 +779,34 @@ pack build store-app-native \
   -Pnative
 ```
 
-### With Custom Configuration
+### Current Build Configuration
 
-Add the following configuration to your `build.gradle` file:
+The project is currently configured for **native image builds by default**:
 
 ```gradle
+// Current configuration in build.gradle
 tasks.named('bootBuildImage') {
     builder = 'paketobuildpacks/builder-jammy-tiny'
     imageName = "${project.name}:${project.version}"
     environment = [
-        'BP_JVM_VERSION': '25'
+        'BP_NATIVE_IMAGE': 'true',   // Native images enabled by default
+        'BP_JVM_VERSION' : '25'
     ]
-    
-    // For native images, uncomment the following:
-    // builder = 'paketobuildpacks/builder-jammy-tiny'
-    // environment = [
-    //     'BP_NATIVE_IMAGE': 'true',
-    //     'BP_JVM_VERSION': '25'
-    // ]
+}
+```
+
+### Alternative JVM Configuration
+
+To build JVM images instead, update your `build.gradle`:
+
+```gradle
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-base'  // Use base builder for JVM
+    imageName = "${project.name}:${project.version}"
+    environment = [
+        'BP_JVM_VERSION': '25'
+        // Remove 'BP_NATIVE_IMAGE': 'true' for JVM builds
+    ]
 }
 ```
 
@@ -859,8 +925,9 @@ and considerations for each component.
 ## Current Versions
 
 - **Java**: 25 (LTS support and latest features)
-- **Spring Boot**: 4.0.0-M2 (Milestone release with Spring Framework 7.x)
+- **Spring Boot**: 4.0.0-M3 (Milestone release with Spring Framework 7.x)
 - **Gradle**: 9.0.0 (Latest stable release with improved performance)
+- **JUnit**: 6.0.0 (Latest testing framework with enhanced features)
 
 ## Java 25 Upgrade
 
@@ -896,7 +963,7 @@ and considerations for each component.
 - New language features and API improvements
 - Better compatibility with modern Spring Boot versions
 
-## Spring Boot 4.0.0-M2 Upgrade
+## Spring Boot 4.0.0-M3 Upgrade
 
 ### Major Changes
 
@@ -909,23 +976,24 @@ and considerations for each component.
 
 1. Update Spring Boot version in `build.gradle`:
    ```gradle
-   id 'org.springframework.boot' version '4.0.0-M2'
+   id 'org.springframework.boot' version '4.0.0-M3'
    ```
 
 2. Update dependency versions:
    ```gradle
    ext {
-       springBootVersion = '4.0.0-M2'
+       springBootVersion = '4.0.0-M3'
        springDependencyManagementVersion = '1.1.7'
    }
    ```
 
-### Known Issues & Workarounds
+### Plugin Status & Configuration
 
-- Some plugins temporarily disabled for compatibility:
+- All plugins are now enabled and compatible with the current setup:
   ```gradle
-  // id 'org.hibernate.orm' version '7.1.0.Final'  // Temporarily disabled
-  // id 'org.cyclonedx.bom' version '1.11.0'  // Temporarily disabled
+  id 'org.hibernate.orm' version '7.1.3.Final'  // Enabled
+  id 'org.cyclonedx.bom' version '2.3.1'  // Enabled
+  id 'com.diffplug.spotless' version '8.0.0'  // Enabled (with Java 25 compatibility adjustments)
   ```
 
 ### Migration Considerations
@@ -933,6 +1001,61 @@ and considerations for each component.
 - Review deprecated APIs and update code accordingly
 - Test thoroughly as this is a milestone release
 - Update security configurations for Spring Security 7.x changes
+
+## JUnit 6 Upgrade
+
+### Major Changes from JUnit 5
+
+- Enhanced test execution engine with better performance
+- Improved parameterized testing capabilities
+- Better integration with modern IDEs and build tools
+- Support for Java 25 features
+
+### Configuration
+
+The project enforces JUnit 6 globally through dependency management:
+
+```gradle
+ext {
+    junitVersion = '6.0.0'
+}
+
+configurations {
+    all {
+        resolutionStrategy.eachDependency { details ->
+            // Block any JUnit Jupiter 5.x versions globally, force upgrade to JUnit 6
+            if (details.requested.group == 'org.junit.jupiter' &&
+                    details.requested.version.startsWith('5.')) {
+                details.useVersion "${junitVersion}"
+                details.because "Globally exclude JUnit Jupiter 5.x, force JUnit 6"
+            }
+        }
+    }
+}
+```
+
+## Testcontainers Integration
+
+### Overview
+
+The project includes Testcontainers for integration testing with real database instances:
+
+- **PostgreSQL Testcontainers**: Automatic provisioning of PostgreSQL instances for tests
+- **Docker Compose Integration**: Seamless integration with existing Docker setup
+- **H2 In-Memory Database**: Fallback for lightweight unit tests
+
+### Dependencies
+
+```gradle
+testImplementation 'org.testcontainers:junit-jupiter'
+testImplementation 'org.testcontainers:postgresql'
+testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+```
+
+### Usage
+
+Integration tests automatically spin up PostgreSQL containers as needed, ensuring test isolation and consistency across
+environments.
 
 ## Gradle 9.0.0 Upgrade
 
