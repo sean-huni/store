@@ -180,7 +180,7 @@ class JwtServiceTest {
         // Given
         // Generate a token with the correct user but tamper with it
         String token = jwtService.generateAccessToken(userDetails);
-        String tamperedToken = token.substring(0, token.lastIndexOf('.') + 1) + "invalid_signature";
+        String tamperedToken = "%sinvalid_signature".formatted(token.substring(0, token.lastIndexOf('.') + 1));
 
         // When/Then
         // Expect an exception when extracting username from a token with invalid signature

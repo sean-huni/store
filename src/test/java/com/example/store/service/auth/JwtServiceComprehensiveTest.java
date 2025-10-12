@@ -156,7 +156,7 @@ class JwtServiceComprehensiveTest {
         }
 
         // Test with invalid signature
-        String invalidSignatureToken = validToken.substring(0, validToken.lastIndexOf('.') + 1) + "invalid_signature";
+        String invalidSignatureToken = "%sinvalid_signature".formatted(validToken.substring(0, validToken.lastIndexOf('.') + 1));
         try {
             extractAllClaimsMethod.invoke(jwtService, invalidSignatureToken);
             fail("Expected exception was not thrown for invalid signature token");

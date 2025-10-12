@@ -52,7 +52,7 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
         when(exception.getValue()).thenReturn(paramValue);
 
         // Mock the message source to return the expected message for the generic parameter type mismatch
-        String expectedMessage = "Parameter '" + paramName + "' has invalid value: '" + paramValue + "'";
+        String expectedMessage = "Parameter '%s' has invalid value: '%s'".formatted(paramName, paramValue);
         when(messageSource.getMessage(eq("global.400.010"), any(), any(), any(Locale.class)))
                 .thenReturn(expectedMessage);
 
@@ -80,7 +80,7 @@ class MethodArgumentTypeMismatchExceptionHandlerTest {
         when(exception.getValue()).thenReturn(paramValue);
 
         // Mock the message source to return the expected message for the generic parameter type mismatch
-        String expectedMessage = "Parameter '" + paramName + "' has invalid value: '" + paramValue + "'";
+        String expectedMessage = "Parameter '%s' has invalid value: '%s'".formatted(paramName, paramValue);
         when(messageSource.getMessage(eq("global.400.010"), any(), any(), any(Locale.class)))
                 .thenReturn(expectedMessage);
 

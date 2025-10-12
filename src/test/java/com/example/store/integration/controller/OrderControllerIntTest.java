@@ -17,6 +17,7 @@ import com.example.store.service.store.OrderService;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import jakarta.persistence.EntityManager;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
@@ -136,18 +138,18 @@ class OrderControllerIntTest {
                 .andReturn();
 
         final String responseContent = result.getResponse().getContentAsString();
-        System.out.println("[DEBUG_LOG] Authentication response: " + responseContent);
+        log.debug("[DEBUG_LOG] Authentication response: {}", responseContent);
         
         // Manual JSON parsing to extract the access token
         try {
             // Create a simple JSON object to extract the token
             com.google.gson.JsonObject jsonObject = gson.fromJson(responseContent, com.google.gson.JsonObject.class);
             String accessToken = jsonObject.get("accessToken").getAsString();
-            
-            authToken = "Bearer " + accessToken;
-            System.out.println("[DEBUG_LOG] Auth token set to: " + authToken);
+
+            authToken = "Bearer %s".formatted(accessToken);
+            log.debug("[DEBUG_LOG] Auth token set to: {}", authToken);
         } catch (Exception e) {
-            System.out.println("[DEBUG_LOG] Failed to extract access token: " + e.getMessage());
+            log.debug("[DEBUG_LOG] Failed to extract access token: {}", e.getMessage());
             authToken = null;
         }
         
@@ -240,7 +242,7 @@ class OrderControllerIntTest {
         @DisplayName("Then return order when found")
         void thenReturnOrderWhenFound() throws Exception {
             // When & Then
-            mockMvc.perform(get("/orders/" + testOrder.getId())
+            mockMvc.perform(get("/orders/%s".formatted(testOrder.getId()))
                             .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testOrder.getId()))

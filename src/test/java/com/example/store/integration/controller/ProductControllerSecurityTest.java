@@ -119,7 +119,7 @@ class ProductControllerSecurityTest {
         AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
-        authToken = "Bearer " + authResponse.accessToken();
+        authToken = "Bearer %s".formatted(authResponse.accessToken());
     }
 
     @Nested
@@ -136,7 +136,7 @@ class ProductControllerSecurityTest {
         @Test
         @DisplayName("Then return 401 when getting product by ID")
         void thenReturn401WhenGettingProductById() throws Exception {
-            mockMvc.perform(get("/products/" + testProduct.getId()))
+            mockMvc.perform(get("/products/%s".formatted(testProduct.getId())))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -172,7 +172,7 @@ class ProductControllerSecurityTest {
         @Test
         @DisplayName("Then return 200 when getting product by ID")
         void thenReturn200WhenGettingProductById() throws Exception {
-            mockMvc.perform(get("/products/" + testProduct.getId())
+            mockMvc.perform(get("/products/%s".formatted(testProduct.getId()))
                             .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testProduct.getId()))

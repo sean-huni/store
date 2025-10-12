@@ -129,7 +129,7 @@ class AuthControllerIntTest {
 
         // When & Then
         mockMvc.perform(post("/auth/refresh-token")
-                        .header("Authorization", "Bearer " + refreshToken))
+                        .header("Authorization", "Bearer %s".formatted(refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").value(refreshToken)) // Same refresh token should be returned

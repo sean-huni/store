@@ -248,13 +248,13 @@ class ValidationExceptionHandlerTest {
         @DisplayName("Then create ErrorDTO with CONFLICT status")
         void thenCreateErrorDTOWithConflictStatus() {
             // Given
-            final String errorMessage = "auth.409.001";
+            final String errorMessage = "auth.400.011";
             final String email = "test@email.com";
-            final String resolvedMessage = "Email already exists";
+            final String resolvedMessage = "Email already registered: test@email.com";
             final EmailAlreadyExistsException exception = new EmailAlreadyExistsException(errorMessage, new String[]{email});
 
             // Mock the message source to return the resolved message
-            when(messageSource.getMessage(eq("auth.409.001"), eq(new String[]{email}), eq("Email already exists"), any(Locale.class)))
+            when(messageSource.getMessage(eq("auth.400.011"), eq(new String[]{email}), eq("Email already exists"), any(Locale.class)))
                     .thenReturn(resolvedMessage);
 
             // When
@@ -486,7 +486,7 @@ class ValidationExceptionHandlerTest {
             // Given
             String paramName = "sortDir";
             String paramValue = "invalid";
-            String resolvedMessage = "Invalid sort direction";
+            String resolvedMessage = "Invalid sort direction. Valid values are 'asc' and 'desc'";
 
             // Create a mock MethodArgumentTypeMismatchException for sortDir parameter
             MethodArgumentTypeMismatchException exception = mock(MethodArgumentTypeMismatchException.class);
@@ -501,11 +501,11 @@ class ValidationExceptionHandlerTest {
             doReturn(enumClass).when(exception).getRequiredType();
 
             // Mock the message source to return the resolved message
-            lenient().when(messageSource.getMessage(eq("global.400.009"), isNull(), eq("Invalid value for parameter 'sortDir'"), any(Locale.class)))
+            lenient().when(messageSource.getMessage(eq("global.400.009"), isNull(), eq("Invalid parameter value"), any(Locale.class)))
                     .thenReturn(resolvedMessage);
 
             // When
-            ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
+            final ErrorDTO result = validationExceptionHandler.handleTypeMismatch(exception);
 
             // Then
             assertNotNull(result);
@@ -561,7 +561,7 @@ class ValidationExceptionHandlerTest {
             doReturn(String.class).when(exception).getRequiredType(); // Non-enum type
 
             // Mock the message source to return the expected message for the generic parameter type mismatch
-            String expectedMessage = "Parameter '" + paramName + "' has invalid value: '" + paramValue + "'";
+            String expectedMessage = "Parameter '%s' has invalid value: '%s'".formatted(paramName, paramValue);
             lenient().when(messageSource.getMessage(eq("global.400.010"), any(), any(), any(Locale.class)))
                     .thenReturn(expectedMessage);
 
@@ -592,7 +592,7 @@ class ValidationExceptionHandlerTest {
             doReturn(null).when(exception).getRequiredType(); // Null type
 
             // Mock the message source to return the expected message for the generic parameter type mismatch
-            String expectedMessage = "Parameter '" + paramName + "' has invalid value: '" + paramValue + "'";
+            String expectedMessage = "Parameter '%s' has invalid value: '%s'".formatted(paramName, paramValue);
             lenient().when(messageSource.getMessage(eq("global.400.010"), any(), any(), any(Locale.class)))
                     .thenReturn(expectedMessage);
 
@@ -620,7 +620,7 @@ class ValidationExceptionHandlerTest {
             String invalidValue = "invalid-date-time";
             Object[] args = new Object[]{invalidValue};
             String fallbackMessage = "Error parsing ZonedDateTime";
-            String localizedMessage = "Error parsing date: " + invalidValue;
+            String localizedMessage = "Error parsing date: %s".formatted(invalidValue);
 
             // Create a LocalizedJsonParseException
             LocalizedJsonParseException exception = new LocalizedJsonParseException(

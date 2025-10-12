@@ -29,6 +29,7 @@ import static java.util.Objects.nonNull;
 @Component
 @RequiredArgsConstructor
 public class FieldErrorExtractor {
+    public static final String FIELD_UNKNOWN = "unknown";
     private final MessageSource messageSource;
 
     // Constants for better maintainability
@@ -213,7 +214,7 @@ public class FieldErrorExtractor {
 
         // Truncate very long values for readability
         if (stringValue.length() > MAX_VALUE_LENGTH) {
-            return stringValue.substring(0, MAX_VALUE_LENGTH - 3) + "...";
+            return "%s...".formatted(stringValue.substring(0, MAX_VALUE_LENGTH - 3));
         }
 
         return stringValue.isEmpty() ? EMPTY_STRING : stringValue;
@@ -227,14 +228,14 @@ public class FieldErrorExtractor {
      */
     private String extractFieldName(final Path propertyPath) {
         if (propertyPath == null) {
-            return "unknown";
+            return FIELD_UNKNOWN;
         }
 
         try {
             return StreamSupport.stream(propertyPath.spliterator(), false)
                     .reduce((first, second) -> second)
                     .map(Path.Node::getName)
-                    .orElse("unknown");
+                    .orElse(FIELD_UNKNOWN);
         } catch (Exception e) {
             log.debug("Failed to extract field name from property path, using toString() fallback", e);
             // Fallback to toString() if spliterator fails
@@ -244,7 +245,7 @@ public class FieldErrorExtractor {
                 int lastDotIndex = pathString.lastIndexOf('.');
                 return lastDotIndex >= 0 ? pathString.substring(lastDotIndex + 1) : pathString;
             }
-            return "unknown";
+            return FIELD_UNKNOWN;
         }
     }
 

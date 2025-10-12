@@ -46,7 +46,7 @@ class CustomUserDetailsServiceTest {
         lenient().when(messageSource.getMessage(eq("auth.400.010"), any(), any(), any(Locale.class)))
                 .thenAnswer(invocation -> {
                     Object[] args = invocation.getArgument(1);
-                    return "User not found with email: " + args[0];
+                    return "User not found with email: %s".formatted(args[0]);
                 });
     }
 
@@ -95,7 +95,7 @@ class CustomUserDetailsServiceTest {
         );
 
         // Verify the exception message matches what would be returned by the MessageSource
-        final String expectedMessage = messageSource.getMessage("auth.400.010", new Object[]{email}, "User not found with email: " + email, Locale.getDefault());
+        final String expectedMessage = messageSource.getMessage("auth.400.010", new Object[]{email}, "User not found with email: %s".formatted(email), Locale.getDefault());
         assertEquals(expectedMessage, exception.getMessage());
     }
 }

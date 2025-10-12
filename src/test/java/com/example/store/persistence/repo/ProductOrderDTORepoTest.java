@@ -56,7 +56,7 @@ class ProductOrderDTORepoTest {
         // Use an existing customer or create a new one with a random ID
         Customer customer = customerRepo.findById(1L).orElseGet(() -> {
             Customer newCustomer = new Customer();
-            newCustomer.setName("Test Customer " + UUID.randomUUID());
+            newCustomer.setName("Test Customer %s".formatted(UUID.randomUUID()));
             newCustomer.setCreated(ZonedDateTime.now());
             newCustomer.setUpdated(ZonedDateTime.now());
             return customerRepo.save(newCustomer);
@@ -65,7 +65,7 @@ class ProductOrderDTORepoTest {
         // Use existing orders or create new ones
         order1 = orderRepo.findById(1L).orElseGet(() -> {
             Order newOrder = new Order();
-            newOrder.setDescription("Test Order " + UUID.randomUUID());
+            newOrder.setDescription("Test Order %s".formatted(UUID.randomUUID()));
             // SKU is now on Product, not Order
             newOrder.setCustomer(customer);
             newOrder.setCreated(ZonedDateTime.now());
@@ -75,7 +75,7 @@ class ProductOrderDTORepoTest {
 
         order2 = orderRepo.findById(2L).orElseGet(() -> {
             Order newOrder = new Order();
-            newOrder.setDescription("Test Order " + UUID.randomUUID());
+            newOrder.setDescription("Test Order %s".formatted(UUID.randomUUID()));
             // SKU is now on Product, not Order
             newOrder.setCustomer(customer);
             newOrder.setCreated(ZonedDateTime.now());

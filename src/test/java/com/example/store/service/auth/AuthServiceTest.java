@@ -110,7 +110,7 @@ class AuthServiceTest {
                     } else if ("auth.400.009".equals(key)) {
                         return "User not found";
                     } else if ("auth.400.011".equals(key) && args != null && args.length > 0) {
-                        return "Email already registered: " + args[0];
+                        return "Email already registered: %s".formatted(args[0]);
                     } else {
                         return defaultMessage;
                     }
@@ -189,7 +189,7 @@ class AuthServiceTest {
     void shouldThrowExceptionWhenAuthenticatingWithBadCredentials() {
         // Given
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Invalid email or password"));
+                .thenThrow(new BadCredentialsException("auth.400.008"));
 
         // When/Then
         BadCredentialsException exception = assertThrows(
@@ -197,7 +197,7 @@ class AuthServiceTest {
                 () -> authService.authenticate(authReqDTO)
         );
 
-        assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals("auth.400.008", exception.getMessage());
     }
 
     @Test

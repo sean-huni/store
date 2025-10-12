@@ -223,6 +223,7 @@ dependencies {
     }
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testRuntimeOnly 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-docker-compose'
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructProcessorVersion}"

@@ -12,6 +12,7 @@ import com.example.store.persistence.repo.UserRepo;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import jakarta.persistence.EntityManager;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest(classes = StoreApp.class)
 @AutoConfigureMockMvc
 @Tag("int")
@@ -113,7 +115,7 @@ class ProductControllerIntTest {
                 .andReturn();
 
         final String responseContent = result.getResponse().getContentAsString();
-        System.out.println("[DEBUG_LOG] Authentication response: " + responseContent);
+        log.debug("[DEBUG_LOG] Authentication response: {}", responseContent);
 
         // Manual JSON parsing to extract the access token
         try {
@@ -121,10 +123,10 @@ class ProductControllerIntTest {
             JsonObject jsonObject = gson.fromJson(responseContent, JsonObject.class);
             String accessToken = jsonObject.get("accessToken").getAsString();
 
-            authToken = "Bearer " + accessToken;
-            System.out.println("[DEBUG_LOG] Auth token set to: " + authToken);
+            authToken = "Bearer %s".formatted(accessToken);
+            log.debug("[DEBUG_LOG] Auth token set to: {}", authToken);
         } catch (Exception e) {
-            System.out.println("[DEBUG_LOG] Failed to extract access token: " + e.getMessage());
+            log.debug("[DEBUG_LOG] Failed to extract access token: {}", e.getMessage());
             authToken = null;
         }
 
@@ -210,7 +212,7 @@ class ProductControllerIntTest {
         @DisplayName("Then return product when found")
         void thenReturnProductWhenFound() throws Exception {
             // When & Then
-            mockMvc.perform(get("/products/" + testProduct.getId())
+            mockMvc.perform(get("/products/%s".formatted(testProduct.getId()))
                             .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testProduct.getId()))

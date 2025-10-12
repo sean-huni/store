@@ -62,7 +62,7 @@ class CustomerRepoTest {
             assertNotNull(customers);
             assertFalse(customers.isEmpty());
             assertTrue(customers.size() <= PAGE_SIZE,
-                    "Expected at most " + PAGE_SIZE + " customers, but got " + customers.size());
+                    "Expected at most %d customers, but got %d".formatted(PAGE_SIZE, customers.size()));
 
             // Verify all returned customers have our search term in their name
             for (Customer customer : customers) {

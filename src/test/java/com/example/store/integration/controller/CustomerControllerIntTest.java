@@ -116,7 +116,7 @@ class CustomerControllerIntTest {
 
         final AuthRespDTO authResponse = gson.fromJson(result.getResponse().getContentAsString(), AuthRespDTO.class);
 
-        authToken = "Bearer " + authResponse.accessToken();
+        authToken = "Bearer %s".formatted(authResponse.accessToken());
     }
 
     @Nested
@@ -206,7 +206,7 @@ class CustomerControllerIntTest {
         @DisplayName("Then return customer when found")
         void thenReturnCustomerWhenFound() throws Exception {
             // When & Then
-            mockMvc.perform(get("/customers/" + testCustomer.getId())
+            mockMvc.perform(get("/customers/%s".formatted(testCustomer.getId()))
                             .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testCustomer.getId()))

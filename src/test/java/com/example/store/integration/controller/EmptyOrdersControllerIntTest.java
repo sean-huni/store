@@ -124,7 +124,7 @@ class EmptyOrdersControllerIntTest {
         AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
-        authToken = "Bearer " + authResponse.accessToken();
+        authToken = "Bearer %s".formatted(authResponse.accessToken());
     }
 
     @Test

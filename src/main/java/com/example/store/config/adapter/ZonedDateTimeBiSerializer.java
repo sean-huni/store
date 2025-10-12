@@ -30,14 +30,14 @@ public class ZonedDateTimeBiSerializer implements JsonSerializer<ZonedDateTime>,
      * @throws JsonParseException If the JSON element cannot be parsed into a ZonedDateTime.
      */
     @Override
-    public ZonedDateTime deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext ctx)
+    public ZonedDateTime deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext ctx)
             throws JsonParseException {
         if (jsonElement == null) {
             return null;
         }
 
         try {
-            String dateTimeStr = jsonElement.getAsString();
+            final String dateTimeStr = jsonElement.getAsString();
             return dateTimeStr != null && !dateTimeStr.isBlank()
                     ? ZonedDateTime.parse(dateTimeStr, FORMATTER)
                     : null;
@@ -46,13 +46,13 @@ public class ZonedDateTimeBiSerializer implements JsonSerializer<ZonedDateTime>,
             // Only carry a message key and fallback message; let a higher layer localize it.
             String valueStr = null;
             try {
-                valueStr = jsonElement.getAsString();
+                valueStr = nonNull(jsonElement) ? jsonElement.getAsString() : null;
             } catch (Exception ex) {
                 // Ignore this exception, we'll just use null for the value
                 log.debug("Could not get string value from JsonElement: {}", ex.getMessage());
                 throw new LocalizedJsonParseException(
                         "global.400.011",
-                        new Object[]{null},
+                        new Object[]{valueStr},
                         "Error parsing ZonedDateTime",
                         ex
                 );
@@ -75,7 +75,7 @@ public class ZonedDateTimeBiSerializer implements JsonSerializer<ZonedDateTime>,
      * @return The JSON element representing the ZonedDateTime.
      */
     @Override
-    public JsonElement serialize(ZonedDateTime dateTime, Type type, JsonSerializationContext ctx) {
+    public JsonElement serialize(final ZonedDateTime dateTime, final Type type, final JsonSerializationContext ctx) {
         return nonNull(dateTime) ? ctx.serialize(dateTime.format(FORMATTER)) : null;
     }
 }

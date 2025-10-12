@@ -2,7 +2,7 @@
 package com.example.store.exception;
 
 public class InvalidRefreshTokenException extends RuntimeException {
-    public InvalidRefreshTokenException(String message) {
+    public InvalidRefreshTokenException(final String message) {
         super(message);
     }
 }

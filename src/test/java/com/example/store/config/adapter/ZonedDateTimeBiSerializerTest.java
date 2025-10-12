@@ -137,7 +137,7 @@ class ZonedDateTimeBiSerializerTest {
     void shouldHandleExceptionWithNullJsonElement() {
         // Given
         // Create a mock JsonElement that throws an exception when getAsString is called
-        JsonElement jsonElement = mock(JsonElement.class);
+        final JsonElement jsonElement = mock(JsonElement.class);
         when(jsonElement.getAsString()).thenThrow(new NullPointerException("Test exception"));
 
         // When/Then
@@ -184,7 +184,7 @@ class ZonedDateTimeBiSerializerTest {
     @DisplayName("Should handle exception during ZonedDateTime parsing")
     void shouldHandleExceptionDuringZonedDateTimeParsing() {
         // Given
-        JsonElement jsonElement = mock(JsonElement.class);
+        final JsonElement jsonElement = mock(JsonElement.class);
         String invalidFormat = "2023-01-01"; // Missing time and zone information
         when(jsonElement.getAsString()).thenReturn(invalidFormat);
 

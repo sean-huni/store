@@ -24,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public @NonNull UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
         return userRepo.findByEmail(username)
                 .orElseThrow(() -> {
-                    final String errorMessage = messageSource.getMessage("auth.400.010", new Object[]{username}, "User not found with email: " + username, Locale.getDefault());
+                    final String errorMessage = messageSource.getMessage("auth.400.010", new Object[]{username}, "User not found with email: %s".formatted(username), Locale.getDefault());
                     return new UsernameNotFoundException(errorMessage);
                 });
     }

@@ -36,6 +36,7 @@ public class ValidationExceptionHandler {
 
     private static final String GLOBAL_ERROR_CODE = "global.400.000";
     private static final Pattern QUOTED_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"");
+    public static final String AUTH_ERROR_401_002 = "auth.401.002";
 
     private final MessageSource messageSource;
     private final FieldErrorExtractor fieldErrorExtractor;
@@ -102,14 +103,14 @@ public class ValidationExceptionHandler {
         boolean isBearerTokenValidation = ex.getAllErrors().stream()
                 .anyMatch(error -> {
                     String defaultMessage = error.getDefaultMessage();
-                    return "auth.401.002".equals(defaultMessage);
+                    return AUTH_ERROR_401_002.equals(defaultMessage);
                 });
 
         if (isBearerTokenValidation) {
             // Return 401 for Bearer token validation failures
             return createErrorResponse(
                     HttpStatus.UNAUTHORIZED,
-                    "auth.401.002",
+                    AUTH_ERROR_401_002,
                     null,
                     "Invalid or expired refresh token",
                     null
@@ -176,7 +177,7 @@ public class ValidationExceptionHandler {
 
         return createErrorResponse(
                 HttpStatus.CONFLICT,
-                "auth.409.001",
+                "auth.400.011",
                 ex.getArgs(),
                 "Email already exists",
                 null
@@ -213,7 +214,7 @@ public class ValidationExceptionHandler {
 
         return createErrorResponse(
                 HttpStatus.UNAUTHORIZED,
-                "auth.401.002",
+                AUTH_ERROR_401_002,
                 null,
                 "Invalid or expired refresh token",
                 null
@@ -243,7 +244,7 @@ public class ValidationExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 messageKey,
                 args,
-                String.format("Invalid value for parameter '%s'", ex.getName()),
+                "Invalid parameter value",
                 null
         );
     }

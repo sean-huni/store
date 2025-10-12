@@ -57,8 +57,8 @@ public class AuthService {
                     .build();
 
         } catch (final BadCredentialsException e) {
-            log.error("Invalid credentials for user: {}", request.email());
-            throw new BadCredentialsException("Invalid email or password");
+            log.error("Invalid credentials for user: {}", request.email(), e);
+            throw new BadCredentialsException("auth.400.008");
         }
     }
 

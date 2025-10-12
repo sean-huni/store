@@ -150,7 +150,7 @@ class OrderControllerSecurityTest {
         @Test
         @DisplayName("Then return 401 when getting order by ID")
         void thenReturn401WhenGettingOrderById() throws Exception {
-            mockMvc.perform(get("/orders/" + testOrder.getId()))
+            mockMvc.perform(get("/orders/%s".formatted(testOrder.getId())))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -185,7 +185,7 @@ class OrderControllerSecurityTest {
         @Test
         @DisplayName("Then return 200 when getting order by ID")
         void thenReturn200WhenGettingOrderById() throws Exception {
-            mockMvc.perform(get("/orders/" + testOrder.getId())
+            mockMvc.perform(get("/orders/%s".formatted(testOrder.getId()))
                     .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testOrder.getId()));

@@ -6,6 +6,7 @@ import com.example.store.dto.error.ErrorDTO;
 import com.example.store.dto.error.ViolationDTO;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -20,6 +21,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@Slf4j
 @Tag("unit")
 @DisplayName("GsonConfig - {Unit}")
 class GsonConfigTest {
@@ -45,7 +47,7 @@ class GsonConfigTest {
 
         // When
         final String json = gson.toJson(errorDTO);
-        System.out.println("Serialized ErrorDTO JSON: " + json);
+        log.info("Serialized ErrorDTO JSON: {}", json);
         final ErrorDTO deserializedErrorDTO = gson.fromJson(json, ErrorDTO.class);
 
         // Then
@@ -78,7 +80,7 @@ class GsonConfigTest {
 
         // When
         String json = gson.toJson(customerDTO);
-        System.out.println("Serialized CustomerDTO JSON: " + json);
+        log.info("Serialized CustomerDTO JSON: {}", json);
         CustomerDTO deserializedCustomerDTO = gson.fromJson(json, CustomerDTO.class);
 
         // Then

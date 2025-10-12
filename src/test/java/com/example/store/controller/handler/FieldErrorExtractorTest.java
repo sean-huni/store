@@ -528,7 +528,7 @@ class FieldErrorExtractorTest {
             assertEquals(1, result.size());
             assertEquals(field, result.get(0).getField());
             // The rejected value gets truncated to 97 characters + "..." due to MAX_VALUE_LENGTH = 100
-            String expectedTruncatedValue = "A".repeat(97) + "...";
+            String expectedTruncatedValue = "%s...".formatted("A".repeat(97));
             assertEquals(expectedTruncatedValue, result.get(0).getRjctValue());
             assertEquals(resolvedMessage, result.get(0).getErrMsg());
             verify(messageSource, times(1)).getMessage(eq(errorCode), isNull(), isNull(), eq(Locale.getDefault()));

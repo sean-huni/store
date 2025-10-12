@@ -17,22 +17,22 @@ public record AuthRespDTO(
         private String tokenType;
         private Long expiresIn;
 
-        public Builder accessToken(String accessToken) {
+        public Builder accessToken(final String accessToken) {
             this.accessToken = accessToken;
             return this;
         }
 
-        public Builder refreshToken(String refreshToken) {
+        public Builder refreshToken(final String refreshToken) {
             this.refreshToken = refreshToken;
             return this;
         }
 
-        public Builder tokenType(String tokenType) {
+        public Builder tokenType(final String tokenType) {
             this.tokenType = tokenType;
             return this;
         }
 
-        public Builder expiresIn(Long expiresIn) {
+        public Builder expiresIn(final Long expiresIn) {
             this.expiresIn = expiresIn;
             return this;
         }

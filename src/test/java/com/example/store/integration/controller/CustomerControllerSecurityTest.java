@@ -114,7 +114,7 @@ class CustomerControllerSecurityTest {
         final AuthRespDTO authResponse = gson.fromJson(
                 result.getResponse().getContentAsString(), AuthRespDTO.class);
 
-        authToken = "Bearer " + authResponse.accessToken();
+        authToken = "Bearer %s".formatted(authResponse.accessToken());
     }
 
     @Nested
@@ -131,7 +131,7 @@ class CustomerControllerSecurityTest {
         @Test
         @DisplayName("Then return 401 when getting customer by ID")
         void thenReturn401WhenGettingCustomerById() throws Exception {
-            mockMvc.perform(get("/customers/" + testCustomer.getId()))
+            mockMvc.perform(get("/customers/%s".formatted(testCustomer.getId())))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -166,7 +166,7 @@ class CustomerControllerSecurityTest {
         @Test
         @DisplayName("Then return 200 when getting customer by ID")
         void thenReturn200WhenGettingCustomerById() throws Exception {
-            mockMvc.perform(get("/customers/" + testCustomer.getId())
+            mockMvc.perform(get("/customers/%s".formatted(testCustomer.getId()))
                     .header("Authorization", authToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testCustomer.getId()))

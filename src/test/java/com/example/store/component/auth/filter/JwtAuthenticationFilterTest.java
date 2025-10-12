@@ -110,7 +110,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Should authenticate user when token is valid")
     void shouldAuthenticateUserWhenTokenIsValid() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(request.getHeader("Authorization")).thenReturn("Bearer %s".formatted(validToken));
         when(jwtService.extractUsername(validToken)).thenReturn(email);
         when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
         when(jwtService.isTokenValid(validToken, userDetails)).thenReturn(true);
@@ -130,7 +130,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Should not authenticate user when token is invalid")
     void shouldNotAuthenticateUserWhenTokenIsInvalid() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(request.getHeader("Authorization")).thenReturn("Bearer %s".formatted(validToken));
         when(jwtService.extractUsername(validToken)).thenReturn(email);
         when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
         when(jwtService.isTokenValid(validToken, userDetails)).thenReturn(false);
@@ -150,7 +150,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Should not authenticate user when username is null")
     void shouldNotAuthenticateUserWhenUsernameIsNull() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(request.getHeader("Authorization")).thenReturn("Bearer %s".formatted(validToken));
         when(jwtService.extractUsername(validToken)).thenReturn(null);
 
         // When
@@ -167,7 +167,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Should handle exception during token processing")
     void shouldHandleExceptionDuringTokenProcessing() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(request.getHeader("Authorization")).thenReturn("Bearer %s".formatted(validToken));
         when(jwtService.extractUsername(validToken)).thenThrow(new RuntimeException("Token processing error"));
 
         // When
@@ -182,7 +182,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Should skip authentication when SecurityContext already has authentication")
     void shouldSkipAuthenticationWhenSecurityContextAlreadyHasAuthentication() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
+        when(request.getHeader("Authorization")).thenReturn("Bearer %s".formatted(validToken));
         when(jwtService.extractUsername(validToken)).thenReturn(email);
 
         // Set up an existing authentication in the security context
