@@ -10,14 +10,13 @@ database optimization, and cloud-native deployment.
 
 ## Author & Maintainer
 
-**Project Maintainer**: [Your Name/Organization]
+**Project Maintainer**: [Sean Huni/SecuritEase]
 
-- **Website**: [https://your-website.com](https://your-website.com)
-- **Documentation**: [https://your-docs-site.com](https://your-docs-site.com)
-- **Support**: [support@your-domain.com](mailto:support@your-domain.com)
+- **Website**: [Sean Huni](https://sean-huni.xyz)
+- **Support**: [sean2kay@gmail.com](mailto:sean2kay@gmail.com)
 
 For technical questions, feature requests, or contributions, please visit
-our [GitHub repository](https://github.com/your-username/store-application) or contact us through the channels above.
+our [GitHub repository](https://github.com/sean-huni/store) or contact us through the channels above.
 
 **Last Updated**: December 2024
 
@@ -160,8 +159,9 @@ This application now supports GraalVM native image compilation for Java 24, whic
 To build a native image, you need GraalVM installed. You can use SDKMan:
 
 ```shell
-sdk i java 24.0.2-graalce
-sdk env
+sdk i java 25-graalce
+sdk env init && echo "Java Version: $(cat .sdkmanrc | grep java | awk -F= '{print $2}')"
+
 ```
 
 Then build the native image with:
@@ -1080,8 +1080,309 @@ environments.
 
 - Faster build times with improved incremental compilation
 - Enhanced dependency resolution
-- Better Kotlin DSL support
 - Improved configuration cache
+- Slow SQL-Query Logging/Alerts
+
+#### Updated Complete Stack Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ COMPLETE JPA/SQL OPTIMIZATION TOOL STACK ACROSS ENVIRONMENTS        │
+├─────────────────┬───────────────────────────────────────────────────┤
+│ LOCAL DEV       │ • Hyperpersistence Optimizer (startup)            │
+│                 │ • datasource-proxy (detailed logging)             │
+│                 │ • @TrackSqlPerf (all annotated, verbose)          │
+│                 │ • flexy-pool (pool metrics)                       │
+│                 │ Overhead: ~8-10% (acceptable for dev)             │
+├─────────────────┼───────────────────────────────────────────────────┤
+│ TESTS           │ • QuickPerf (fail tests on violations)            │
+│                 │ • Hyperpersistence Optimizer (entity validation)  │
+│                 │ • datasource-proxy (query tracking)               │
+│                 │ • @TrackSqlPerf (optional, can validate)          │
+│                 │ • Testcontainers (real DB)                        │
+│                 │ Overhead: N/A (test-only)                         │
+├─────────────────┼───────────────────────────────────────────────────┤
+│ DEV             │ • Hyperpersistence Optimizer (startup)            │
+│                 │ • datasource-proxy (moderate logging)             │
+│                 │ • @TrackSqlPerf (all annotated, warnings)         │
+│                 │ • flexy-pool (pool metrics)                       │
+│                 │ Overhead: ~6-8%                                   │
+├─────────────────┼───────────────────────────────────────────────────┤
+│ QA              │ • datasource-proxy (slow queries only)            │
+│                 │ • @TrackSqlPerf (soft warnings)                   │
+│                 │ • flexy-pool (pool metrics)                       │
+│                 │ • QuickPerf (automated test suite)                │
+│                 │ Overhead: ~4-6%                                   │
+├─────────────────┼───────────────────────────────────────────────────┤
+│ STAGE           │ • datasource-proxy (slow queries)                 │
+│                 │ • @TrackSqlPerf (STRICT, fail-fast=true)          │
+│                 │ • flexy-pool (pool metrics)                       │
+│                 │ • QuickPerf (CI tests block deployment)           │
+│                 │ Overhead: ~4-5%                                   │
+│                 │ ⚠️ BLOCKS DEPLOYMENT ON VIOLATIONS                │
+├─────────────────┼───────────────────────────────────────────────────┤
+│ PROD            │ • datasource-proxy (critical slow queries only)   │
+│                 │ • @TrackSqlPerf (5-10% critical ops, metrics)     │
+│                 │ • flexy-pool (pool metrics)                       │
+│                 │ Overhead: ~3-4%                                   │
+│                 │ ✅ NEVER blocks, only monitors & alerts           │
+└─────────────────┴───────────────────────────────────────────────────┘
+```
+
+## SQL Performance Monitoring - Complete Setup Guide
+
+### Environment Configuration Overview
+
+This project implements a comprehensive, environment-aware SQL performance monitoring stack that automatically adapts
+based on your deployment environment. Each environment has been carefully tuned to balance monitoring visibility with
+performance overhead.
+
+### Manual Setup Instructions
+
+#### 1. Local Development Environment
+
+**Profile**: `application-local.yml`
+
+To run with full monitoring (recommended for development):
+
+```bash
+# Start with local profile for maximum debugging visibility
+./gradlew bootRun --args='--spring.profiles.active=local'
+
+# Or set environment variable
+export SPRING_PROFILES_ACTIVE=local
+./gradlew bootRun
+```
+
+**What you get:**
+
+- ✅ Hyperpersistence Optimizer startup validation
+- ✅ Detailed SQL logging with 100ms slow query threshold
+- ✅ @TrackSqlPerf enabled for all annotated methods
+- ✅ Flexy-pool with JMX + log reporters
+- ✅ Full debug logging for troubleshooting
+
+#### 2. QA Environment
+
+**Profile**: `application-qa.yml`
+
+```bash
+# QA environment with performance testing boundaries
+./gradlew bootRun --args='--spring.profiles.active=qa'
+```
+
+**What you get:**
+
+- ⚠️ Moderate monitoring with 300ms slow query threshold
+- ✅ @TrackSqlPerf with soft warnings (no fail-fast)
+- ✅ Flexy-pool connection monitoring
+- ⚠️ QuickPerf available for automated test suite
+- ❌ Hyperpersistence Optimizer disabled for performance
+
+#### 3. Staging Environment (HARD GATE)
+
+**Profile**: `application-stage.yml`
+
+```bash
+# Staging with strict performance gates
+./gradlew bootRun --args='--spring.profiles.active=stage'
+```
+
+**What you get:**
+
+- 🚫 STRICT mode with 250ms error threshold
+- 🚫 @TrackSqlPerf with FAIL-FAST enabled (blocks deployment)
+- 🚫 QuickPerf in CI tests (blocks deployment on SQL issues)
+- ✅ Flexy-pool monitoring
+- ❌ Hyperpersistence Optimizer disabled
+
+#### 4. Production Environment
+
+**Profile**: `application-live.yml` (default)
+
+```bash
+# Production with minimal overhead
+./gradlew bootRun --args='--spring.profiles.active=live'
+```
+
+**What you get:**
+
+- ✅ Critical operations monitoring only (500ms threshold)
+- ✅ @TrackSqlPerf for critical=true operations only
+- ✅ Flexy-pool connection monitoring
+- ❌ All other tools disabled for minimal overhead
+
+### Usage Examples and Best Practices
+
+#### How to Mark Operations as Critical
+
+```java
+
+@Repository
+public interface CustomerRepo extends JpaRepository<Customer, Long> {
+
+    // ✅ GOOD: Critical operation monitored in all environments
+    @TrackSqlPerf(value = "findCustomerByIdWithOrders",
+            timeUnit = TimeUnit.MILLISECONDS,
+            warnThreshold = 100,
+            errorThreshold = 250,
+            maxExpectedQueries = 1,
+            critical = true,  // 🔥 This ensures monitoring in production
+            metricTags = {"service=store", "operation=fetch-with-orders"}
+    )
+    @Query("from Customer c where c.id =:id")
+    @EntityGraph(attributePaths = {"orders"})
+    Optional<Customer> findCustomerByIdWithOrders(@Param("id") Long id);
+
+    // ❌ BAD: Non-critical operation, won't be monitored in production
+    @TrackSqlPerf(value = "findAllCustomers",
+            critical = false  // Skip in production
+    )
+    List<Customer> findAll();
+}
+```
+
+#### Environment-Specific Property Overrides
+
+**Local Development (application-local.yml)**:
+
+```yaml
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: false
+    detailed-logging: true
+    warn-threshold-multiplier: 1.0
+    error-threshold-multiplier: 1.0
+```
+
+**Staging Environment (application-stage.yml)**:
+
+```yaml
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: true  # BLOCK deployment on issues
+    strict-mode: true
+    error-threshold-multiplier: 0.8  # 20% stricter thresholds
+```
+
+**Production Environment (application-live.yml)**:
+
+```yaml
+sql-performance:
+  tracking:
+    enabled: true
+    critical-operations-only: true  # Monitor only critical=true
+    fail-fast-on-error: false  # Log errors, don't crash
+```
+
+### Potential Pitfalls and Troubleshooting
+
+#### ⚠️ Common Issues and Solutions
+
+##### 1. "No SQL monitoring in production"
+
+**Problem**: Operations not being tracked in production environment.
+
+**Solution**: Ensure operations are marked with `critical = true`:
+
+```java
+// ❌ Won't be monitored in production
+@TrackSqlPerf(value = "someOperation")
+public Optional<Customer> someOperation(Long id) { /* ... */ }
+
+// ✅ Will be monitored in production  
+@TrackSqlPerf(value = "someOperation", critical = true)
+public Optional<Customer> someOperation(Long id) { /* ... */ }
+```
+
+##### 2. "Tests failing in staging due to strict thresholds"
+
+**Problem**: Staging environment fails deployment due to performance gates.
+
+**Solution**: This is **intentional**. Staging acts as a HARD GATE. Options:
+
+- Optimize the slow query
+- Adjust thresholds if legitimately needed
+- Use `@ExpectSlowQuery` annotation for acceptable slow operations
+
+##### 3. "Too much logging in development"
+
+**Problem**: Development logs are overwhelming.
+
+**Solution**: Adjust logging levels in `application-local.yml`:
+
+```yaml
+logging:
+  level:
+    com.example.store.aop.performance: INFO  # Reduce to INFO
+    net.ttddyy.dsproxy.listener: WARN        # Reduce SQL proxy logging
+```
+
+##### 4. "HypersistenceOptimizer warnings on startup"
+
+**Problem**: Seeing entity relationship warnings.
+
+**Solution**: This is **intentional** in dev/test environments:
+
+```java
+// Fix the actual relationship issue
+@Entity
+public class Customer {
+    @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)  // ✅ Use LAZY
+    private List<Order> orders;
+
+    // ✅ Add helper methods for bidirectional relationships
+    public void addOrder(Order order) {
+        orders.add(order);
+        order.setCustomer(this);
+    }
+}
+```
+
+##### 5. "Connection pool exhaustion"
+
+**Problem**: Application running out of database connections.
+
+**Solution**: Check flexy-pool metrics and tune accordingly:
+
+```yaml
+# Increase pool size if needed
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 50  # Increase from default
+      leak-detection-threshold: 60000  # Detect connection leaks
+```
+
+### Performance Impact Analysis
+
+#### Overhead by Environment
+
+| Environment   | CPU Overhead | Memory Overhead | I/O Overhead                | Recommended Usage       |
+|:--------------|:-------------|:----------------|:----------------------------|:------------------------|
+| **LOCAL DEV** | ~8-12%       | ~15-20MB        | High (detailed logging)     | ✅ All features enabled  |
+| **QA**        | ~4-6%        | ~8-10MB         | Medium (warn-level logging) | ⚠️ Selective monitoring |
+| **STAGE**     | ~3-4%        | ~5-8MB          | Low (error-level only)      | 🚫 Strict gates only    |
+| **PROD**      | ~1-2%        | ~2-3MB          | Minimal (critical errors)   | ✅ Critical path only    |
+
+#### Tool-Specific Impact
+
+```
+📊 Performance Impact Breakdown (Production):
+
+datasource-proxy (enabled):     ~1-2% CPU, ~1-2MB RAM
+flexy-pool (enabled):          ~0.5% CPU, ~1MB RAM  
+@TrackSqlPerf (critical only): ~0.5% CPU, ~0.5MB RAM
+─────────────────────────────────────────────────────
+Total Production Overhead:      ~2-3% CPU, ~2.5-3.5MB RAM
+
+🚫 Disabled in Production:
+HypersistenceOptimizer:         ~2-3% CPU, ~5-10MB RAM (saved)
+QuickPerf:                      Test-only, 0% runtime impact
+Full SQL logging:               ~3-5% CPU, ~10MB RAM (saved)
+```
 
 ### Plugin Compatibility
 

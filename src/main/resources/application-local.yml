@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: store-local
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        generate_statistics: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  datasource:
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      connection-timeout: 5000
+
+---
+# LOCAL DEV Configuration - Maximum visibility for debugging
+decorator:
+  datasource:
+    enabled: true
+    datasource-proxy:
+      enabled: true
+      count-query: true
+      logging: slf4j
+      multiline: true
+      query:
+        log-slow-query: true
+        slow-query-threshold: 100  # Lower threshold for development
+        count-query: true
+        log-level: debug
+        enable-logging: true
+      slow-query:
+        enable-logging: true
+        log-level: warn
+    flexy-pool:
+      enabled: true
+      acquisition-strategy:
+        increment-pool:
+          max-overgrow-pool-size: 20
+      metrics:
+        reporter:
+          jmx:
+            auto-start: true
+          log:
+            auto-start: true
+            log-interval: 30
+
+---
+# SQL Performance Tracking Configuration - Full monitoring for local dev
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: false  # Don't fail fast in development
+    log-queries: true
+    detailed-logging: true
+
+---
+# Hyperpersistence Optimizer - Enabled for startup validation
+hypersistence:
+  optimizer:
+    enabled: true
+    log-events: true
+
+---
+logging:
+  level:
+    com.example.store.aop.performance: DEBUG
+    com.example.store.config.sqltracking: DEBUG
+    net.ttddyy.dsproxy.listener: DEBUG
+    io.hypersistence.optimizer: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -7,6 +7,14 @@ spring:
     name: store-dev
 
 ---
+# application-dev.yml
+sql-performance:
+  tracking:
+    enabled: true
+    log-queries: true
+    fail-fast-on-error: false
+
+---
 application:
   security:
     jwt:

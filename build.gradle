@@ -5,8 +5,11 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.hibernate.orm' version '7.1.3.Final'
     id 'com.diffplug.spotless' version '8.0.0'
-    id "org.sonarqube" version '6.3.1.5724'
+    id "org.sonarqube" version '7.0.0.6105'
     id 'org.cyclonedx.bom' version '2.3.1'
+    // Ben Manes Versions plugin - checks for dependency updates
+    // Usage: ./gradlew dependencyUpdates
+    id 'com.github.ben-manes.versions' version '0.53.0'
     id 'jacoco'
     id 'checkstyle'
 }
@@ -24,17 +27,19 @@ ext {
     cyclonedxBomVersion = '1.10.0'
 
     // Library versions
+    aopVersion = '4.0.0-M2'
     lombokVersion = '1.18.38'
-    mapstructVersion = '1.6.2'
+    mapstructVersion = '1.6.3'
     mapstructProcessorVersion = '1.6.3'
     lombokMapstructBindingVersion = '0.2.0'
-    caffeineVersion = '3.1.8'
+    caffeineVersion = '3.2.2'
     flexyPoolVersion = '1.12.0'
     quickPerfVersion = '1.1.0' //FixMe: No Support yet for Junit6, Java25 & Spring Boot 4
     jjwtVersion = '0.12.6'
     springdocVersion = '2.8.9'
     mockitoCoreVersion = '5.18.0'
     junitVersion = '6.0.0'
+    hypersistenceVersion = '2.12.1'
 
     // JaCoCo versions
     jacocoToolVersion = '0.8.13'
@@ -50,7 +55,7 @@ ext {
 apply from: 'jacoco.gradle'
 
 group = 'com.example'
-version = '1.0.5'
+version = '2.0.0'
 
 // Set the JAR file name to a fixed name without version
 bootJar {
@@ -125,6 +130,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()        // 👈 This enables ~/.m2/repository
     mavenCentral()
 }
 
@@ -164,6 +170,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-docker-compose'
     implementation 'com.google.code.gson:gson'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop
+    implementation 'org.springframework.boot:spring-boot-starter-aop:'.concat(aopVersion)
 
     // Spring Security dependencies
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -180,6 +188,9 @@ dependencies {
     implementation "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:${flexyPoolVersion}"
     implementation "com.github.gavlyukovskiy:flexy-pool-spring-boot-starter:${flexyPoolVersion}"
     implementation "com.github.gavlyukovskiy:p6spy-spring-boot-starter:${flexyPoolVersion}"
+
+    // Hyperpersistence
+    implementation 'io.hypersistence:hypersistence-optimizer:'.concat(hypersistenceVersion).concat(':jakarta')
 
     // QuickPerf - GitHub: https://github.com/quick-perf/quickperf
     testImplementation "org.quickperf:quick-perf-junit5:${quickPerfVersion}"
@@ -249,30 +260,9 @@ hibernate {
     }
 }
 
-// Custom dependency updates checker using Gradle's built-in APIs
-tasks.register('checkDependencyUpdates') {
-    description = 'Checks for available dependency updates'
-    group = 'verification'
-
-    doLast {
-        println "=" * 80
-        println "DEPENDENCY UPDATE REPORT"
-        println "=" * 80
-
-        configurations.compileClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-            def moduleId = artifact.moduleVersion.id
-            println "Checking: ${moduleId.group}:${moduleId.name}:${moduleId.version}"
-        }
-
-        println "=" * 80
-        println "Note: This is a basic implementation. For detailed update information,"
-        println "consider using dedicated dependency management tools."
-        println "=" * 80
-    }
-}
-
-// Make checkDependencyUpdates task run automatically during build
-build.dependsOn checkDependencyUpdates
+// Dependency updates are handled by the ben-manes plugin
+// Run: ./gradlew dependencyUpdates to check for dependency updates
+// The plugin provides detailed reports with current version -> latest version format
 
 tasks.named('test') {
     useJUnitPlatform() {
