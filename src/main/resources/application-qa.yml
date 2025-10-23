@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: store-qa
+  jpa:
+    show-sql: false  # Reduce verbosity in QA
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false  # Reduce overhead
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  datasource:
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 10
+      connection-timeout: 10000
+
+---
+# QA Configuration - Performance testing with soft boundaries
+decorator:
+  datasource:
+    enabled: true
+    datasource-proxy:
+      enabled: true
+      count-query: false  # Reduce overhead
+      logging: slf4j
+      multiline: false
+      query:
+        log-slow-query: true
+        slow-query-threshold: 300  # Only slow queries
+        count-query: false
+        log-level: warn  # Only warnings
+        enable-logging: true
+      slow-query:
+        enable-logging: true
+        log-level: warn
+    flexy-pool:
+      enabled: true
+      acquisition-strategy:
+        increment-pool:
+          max-overgrow-pool-size: 30
+      metrics:
+        reporter:
+          jmx:
+            auto-start: true
+          log:
+            auto-start: false  # Reduce log noise
+
+---
+# SQL Performance Tracking Configuration - Soft warnings
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: false  # Soft warnings only
+    log-queries: true
+    detailed-logging: false  # Reduce verbosity
+    warn-threshold-multiplier: 1.2  # Slightly more lenient
+
+---
+# Hyperpersistence Optimizer - Disabled in QA (not needed per requirements)
+hypersistence:
+  optimizer:
+    enabled: false
+
+---
+# QuickPerf - Available for automated test suite
+quickperf:
+  enabled: true
+  sql:
+    display-sql-of-test-method-body: false  # Reduce test verbosity
+    disable-exactly-same-selects: true
+
+---
+logging:
+  level:
+    com.example.store.aop.performance: INFO  # Reduced verbosity
+    com.example.store.config.sqltracking: WARN
+    net.ttddyy.dsproxy.listener: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.quickperf: INFO

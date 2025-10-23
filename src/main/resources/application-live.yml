@@ -3,10 +3,80 @@ spring:
     url: jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
     username: ${user}
     password: ${pass}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000  # Critical for production
   application:
     name: store
+  jpa:
+    show-sql: false  # Never show SQL in production
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false  # Minimal overhead
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+    open-in-view: false  # Important for performance
 
 ---
+# PRODUCTION Configuration - Minimal overhead, critical path monitoring only
+decorator:
+  datasource:
+    enabled: true
+    datasource-proxy:
+      enabled: true
+      count-query: false  # Minimal overhead
+      logging: slf4j
+      multiline: false
+      query:
+        log-slow-query: true
+        slow-query-threshold: 500  # Only critical slow queries
+        count-query: false
+        log-level: error  # Only critical issues
+        enable-logging: true
+      slow-query:
+        enable-logging: true
+        log-level: error
+    flexy-pool:
+      enabled: true  # Connection pool monitoring is critical
+      acquisition-strategy:
+        increment-pool:
+          max-overgrow-pool-size: 60
+      metrics:
+        reporter:
+          jmx:
+            auto-start: true  # Essential for production monitoring
+          log:
+            auto-start: false  # Reduce log overhead
+
+---
+# SQL Performance Tracking Configuration - CRITICAL OPERATIONS ONLY
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: false  # Don't fail in production, just alert
+    log-queries: false  # Minimal logging
+    detailed-logging: false
+    critical-operations-only: true  # Only monitor @TrackSqlPerf with critical=true
+
+---
+# All other tools disabled for production
+hypersistence:
+  optimizer:
+    enabled: false  # Not needed in production
+
+quickperf:
+  enabled: false  # Test-only tool
+
+---
+# Production Security
 application:
   security:
     jwt:
@@ -14,3 +84,25 @@ application:
       secret-key: ${SECRET_KEY}
       expiration: ${JWT_EXPIRE}
       refreshExpiration: ${JWT_REFRESH_EXPIRATION:259200000}  # 3 days
+
+---
+# Production monitoring - Essential endpoints only
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never  # Security best practice
+
+---
+# Production logging - Minimal overhead
+logging:
+  level:
+    com.example.store.aop.performance: ERROR  # Only critical issues
+    com.example.store.config.sqltracking: ERROR
+    net.ttddyy.dsproxy.listener: ERROR
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+    root: WARN  # Reduce overall log volume

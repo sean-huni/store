@@ -1,0 +1,109 @@
+package com.example.store.config.Hyperpersistence;
+
+import io.hypersistence.optimizer.HypersistenceOptimizer;
+import io.hypersistence.optimizer.core.config.Config;
+import io.hypersistence.optimizer.core.config.JpaConfig;
+import jakarta.persistence.EntityManagerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.SessionFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.InfrastructureProxy;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.orm.jpa.hibernate.LocalSessionFactoryBean;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@Configuration
+public class HypersistenceConfig {
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "hypersistence.optimizer",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    public HypersistenceOptimizer hypersistenceOptimizer(final EntityManagerFactory entityManagerFactory) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(Config.Property.Session.TIMEOUT_MILLIS, 1000);
+        properties.put(Config.Property.Session.FLUSH_TIMEOUT_MILLIS, 500);
+        log.info("Initializing Hypersistence Optimizer...");
+
+        return new HypersistenceOptimizer(new JpaConfig(entityManagerFactory).setProperties(properties));
+    }
+//
+
+    @Bean
+    public LocalSessionFactoryBean originalSessionFactory() {
+        LocalSessionFactoryBean localSessionFactoryBean = new LocalSessionFactoryBean();
+        localSessionFactoryBean.setBootstrapExecutor(new SimpleAsyncTaskExecutor());
+        return localSessionFactoryBean;
+    }
+
+    @Bean
+    @Primary
+    public SessionFactory sessionFactory(SessionFactory originalSessionFactory) {
+        if (originalSessionFactory instanceof InfrastructureProxy infrastructureProxy) {
+            return (SessionFactory) infrastructureProxy.getWrappedObject();
+        }
+        return originalSessionFactory;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void logOptimizationEvents() {
+        log.info("=".repeat(80));
+        log.info("Hypersistence Optimizer - Startup Validation Results");
+        log.info("=".repeat(80));
+
+        // In a real app, you might want to collect and report these
+        // The optimizer will log warnings automatically during startup
+
+        /*
+
+            ### Example Output When Starting Application
+            ```
+            2025-10-23 10:15:32.456  INFO --- Initializing Hyperpersistence Optimizer...
+
+            2025-10-23 10:15:32.789  WARN --- [Hyperpersistence Optimizer]
+            ╔═══════════════════════════════════════════════════════════════════════════════
+            ║ EAGER FETCHING DETECTED
+            ╠═══════════════════════════════════════════════════════════════════════════════
+            ║ Entity: com.example.demo.entity.BadOrder
+            ║ Association: items
+            ║ Type: OneToMany
+            ║ Issue: Using FetchType.EAGER can cause performance problems
+            ║
+            ║ Recommendation:
+            ║ - Change to FetchType.LAZY
+            ║ - Use entity graphs or fetch joins when you need eager loading
+            ║ - Selective eager loading is better than global eager loading
+            ╚═══════════════════════════════════════════════════════════════════════════════
+
+            2025-10-23 10:15:32.821  WARN --- [Hyperpersistence Optimizer]
+            ╔═══════════════════════════════════════════════════════════════════════════════
+            ║ BIDIRECTIONAL ASSOCIATION WITHOUT HELPER METHODS
+            ╠═══════════════════════════════════════════════════════════════════════════════
+            ║ Entity: com.example.demo.entity.Customer
+            ║ Association: orders
+            ║ Type: OneToMany
+            ║ Issue: Bidirectional association without proper helper methods
+            ║
+            ║ Recommendation:
+            ║ - Add helper methods to keep both sides synchronized:
+            ║   public void addOrder(Order order) {
+            ║       orders.add(order);
+            ║       order.setCustomer(this);
+            ║   }
+            ╚═══════════════════════════════════════════════════════════════════════════════
+
+            2025-10-23 10:15:32.856  INFO --- Application started successfully
+         */
+    }
+}

@@ -74,7 +74,7 @@ services:
 
   # 4. PostgreSQL for SonarQube
   db:
-    image: postgres:alpine # PostgreSQL image for storing SonarQube data
+    image: postgres:18-alpine3.22 # PostgreSQL image for storing SonarQube data
     container_name: sonarqube_db
     environment:
       POSTGRES_USER: sonar

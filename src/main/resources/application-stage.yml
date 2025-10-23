@@ -1,0 +1,102 @@
+spring:
+  application:
+    name: store-stage
+  jpa:
+    show-sql: false  # Production-like settings
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false  # Minimal overhead
+        jdbc:
+          batch_size: 100  # Optimized for performance
+        order_inserts: true
+        order_updates: true
+  datasource:
+    hikari:
+      maximum-pool-size: 40
+      minimum-idle: 15
+      connection-timeout: 15000
+      leak-detection-threshold: 60000  # Important for pre-prod
+
+---
+# STAGE/PRE-PROD Configuration - HARD GATE to block poor performance from prod
+decorator:
+  datasource:
+    enabled: true
+    datasource-proxy:
+      enabled: true
+      count-query: false  # Minimal overhead
+      logging: slf4j
+      multiline: false
+      query:
+        log-slow-query: true
+        slow-query-threshold: 250  # Strict threshold
+        count-query: false
+        log-level: error  # Only critical issues
+        enable-logging: true
+      slow-query:
+        enable-logging: true
+        log-level: error  # Treat slow queries as errors
+    flexy-pool:
+      enabled: true
+      acquisition-strategy:
+        increment-pool:
+          max-overgrow-pool-size: 50
+      metrics:
+        reporter:
+          jmx:
+            auto-start: true
+          log:
+            auto-start: false
+
+---
+# SQL Performance Tracking Configuration - STRICT mode with fail-fast
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: true  # CRITICAL: Block deployment on performance issues
+    log-queries: true
+    detailed-logging: false
+    strict-mode: true
+    error-threshold-multiplier: 0.8  # More strict than normal
+
+---
+# Hyperpersistence Optimizer - Disabled (not needed per requirements)
+hypersistence:
+  optimizer:
+    enabled: false
+
+---
+# QuickPerf - In CI tests to block deployment
+quickperf:
+  enabled: true
+  sql:
+    display-sql-of-test-method-body: false
+    disable-exactly-same-selects: true
+    fail-on-sql-performance-issues: true  # Block deployment
+    max-query-execution-time: 200  # Strict limits
+    disable-cross-join: true
+
+---
+# Monitoring and Alerting
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+---
+logging:
+  level:
+    com.example.store.aop.performance: ERROR  # Only critical issues
+    com.example.store.config.sqltracking: ERROR
+    net.ttddyy.dsproxy.listener: ERROR
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+    org.quickperf: WARN
+    root: WARN  # Reduce overall noise

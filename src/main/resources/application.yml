@@ -53,3 +53,15 @@ customer:
     sort-field: name
     limit: 20
     sort-direction: asc
+
+# application.yml
+sql-performance:
+  tracking:
+    enabled: true
+    fail-fast-on-error: false
+    log-queries: true
+
+---
+logging:
+  level:
+    log4j.category.Hypersistence-Optimizer: INFO
