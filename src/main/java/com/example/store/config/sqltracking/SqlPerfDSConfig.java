@@ -19,22 +19,22 @@ import java.util.List;
 @Slf4j
 @Configuration
 @EnableAspectJAutoProxy
-public class SqlPerformanceDataSourceConfig {
+public class SqlPerfDSConfig { // Sql-Performance-DataSource-Config
 
     @Bean
-    public BeanPostProcessor sqlPerformanceDataSourcePostProcessor(
+    public static BeanPostProcessor sqlPerfDSPostProcessor(
             SqlPerformanceContextHolder contextHolder,
-            CustomQueryLoggingListener customQueryLoggingListener) {
+            SqlLoggingListener sqlLoggingListener) {
 
         return new BeanPostProcessor() {
             @Override
-            public Object postProcessAfterInitialization(Object bean, String beanName) {
+            public Object postProcessAfterInitialization(final Object bean, final String beanName) {
                 if (bean instanceof DataSource && !(bean instanceof ProxyDataSource)) {
 
                     return ProxyDataSourceBuilder
                             .create((DataSource) bean)
                             .name("SQL-Performance-Tracker")
-                            .listener(customQueryLoggingListener)
+                            .listener(sqlLoggingListener)
                             .listener(new QueryExecutionListener() {
                                 @Override
                                 public void beforeQuery(ExecutionInfo executionInfo, List<QueryInfo> list) {

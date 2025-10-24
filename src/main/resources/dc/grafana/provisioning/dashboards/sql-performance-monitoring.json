@@ -567,7 +567,7 @@
       },
       "id": 9,
       "panels": [],
-      "title": "4. Hyperpersistence-Optimizer - JPA Optimization Metrics",
+      "title": "4. Hypersistence-Optimizer - JPA Optimization Metrics",
       "type": "row"
     },
     {
@@ -575,7 +575,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "JPA optimization metrics from Hyperpersistence Optimizer",
+      "description": "JPA optimization metrics from Hypersistence Optimizer",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -657,7 +657,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jpa_queries_executed_total{component=\"hyperpersistence-optimizer\"}",
+          "expr": "jpa_queries_executed_total{component=\"hypersistence-optimizer\"}",
           "interval": "",
           "legendFormat": "Total JPA Queries",
           "range": true,
@@ -710,11 +710,11 @@
           },
           {
             "selected": false,
-            "text": "hyperpersistence-optimizer",
-            "value": "hyperpersistence-optimizer"
+            "text": "hypersistence-optimizer",
+            "value": "hypersistence-optimizer"
           }
         ],
-        "query": "track-sql-perf,datasource-proxy,flexy-pool,hyperpersistence-optimizer",
+        "query": "track-sql-perf,datasource-proxy,flexy-pool,hypersistence-optimizer",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

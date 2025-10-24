@@ -62,7 +62,7 @@ sql-performance:
     error-threshold-multiplier: 0.8  # More strict than normal
 
 ---
-# Hyperpersistence Optimizer - Disabled (not needed per requirements)
+# hypersistence Optimizer - Disabled (not needed per requirements)
 hypersistence:
   optimizer:
     enabled: false

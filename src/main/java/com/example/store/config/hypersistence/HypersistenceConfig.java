@@ -1,4 +1,4 @@
-package com.example.store.config.Hyperpersistence;
+package com.example.store.config.hypersistence;
 
 import io.hypersistence.optimizer.HypersistenceOptimizer;
 import io.hypersistence.optimizer.core.config.Config;
@@ -52,9 +52,9 @@ public class HypersistenceConfig {
 
             ### Example Output When Starting Application
             ```
-            2025-10-23 10:15:32.456  INFO --- Initializing Hyperpersistence Optimizer...
+            2025-10-23 10:15:32.456  INFO --- Initializing hypersistence Optimizer...
 
-            2025-10-23 10:15:32.789  WARN --- [Hyperpersistence Optimizer]
+            2025-10-23 10:15:32.789  WARN --- [hypersistence Optimizer]
             ╔═══════════════════════════════════════════════════════════════════════════════
             ║ EAGER FETCHING DETECTED
             ╠═══════════════════════════════════════════════════════════════════════════════
@@ -69,7 +69,7 @@ public class HypersistenceConfig {
             ║ - Selective eager loading is better than global eager loading
             ╚═══════════════════════════════════════════════════════════════════════════════
 
-            2025-10-23 10:15:32.821  WARN --- [Hyperpersistence Optimizer]
+            2025-10-23 10:15:32.821  WARN --- [hypersistence Optimizer]
             ╔═══════════════════════════════════════════════════════════════════════════════
             ║ BIDIRECTIONAL ASSOCIATION WITHOUT HELPER METHODS
             ╠═══════════════════════════════════════════════════════════════════════════════

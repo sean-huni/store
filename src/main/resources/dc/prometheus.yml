@@ -74,8 +74,8 @@ scrape_configs:
       - target_label: monitoring_category
         replacement: 'connection-pool-monitoring'
 
-  # 4. Hyperpersistence-Optimizer - JPA optimization metrics (startup validation)
-  - job_name: 'hyperpersistence-optimizer'
+  # 4. hypersistence-Optimizer - JPA optimization metrics (startup validation)
+  - job_name: 'hypersistence-optimizer'
     metrics_path: '/actuator/prometheus'
     scrape_interval: 5s  # Less frequent as this is startup validation
     static_configs:
@@ -91,7 +91,7 @@ scrape_configs:
         action: keep
       # Add component label for Grafana categorization
       - target_label: component
-        replacement: 'hyperpersistence-optimizer'
+        replacement: 'hypersistence-optimizer'
       # Add monitoring_category label for dashboard filtering
       - target_label: monitoring_category
         replacement: 'jpa-optimization'

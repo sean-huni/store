@@ -192,7 +192,7 @@ dependencies {
     implementation "com.github.gavlyukovskiy:flexy-pool-spring-boot-starter:${flexyPoolVersion}"
     implementation "com.github.gavlyukovskiy:p6spy-spring-boot-starter:${flexyPoolVersion}"
 
-    // Hyperpersistence
+    // hypersistence
     implementation 'io.hypersistence:hypersistence-optimizer:'.concat(hypersistenceVersion).concat(':jakarta')
 
     // QuickPerf - GitHub: https://github.com/quick-perf/quickperf

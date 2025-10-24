@@ -60,7 +60,7 @@ sql-performance:
     warn-threshold-multiplier: 1.2  # Slightly more lenient
 
 ---
-# Hyperpersistence Optimizer - Disabled in QA (not needed per requirements)
+# hypersistence Optimizer - Disabled in QA (not needed per requirements)
 hypersistence:
   optimizer:
     enabled: false

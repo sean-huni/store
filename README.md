@@ -1023,7 +1023,7 @@ java -XX:+UseZGC \
 ZGC's consistent low-latency characteristics make it ideal for our comprehensive SQL performance monitoring stack:
 
 - **@TrackSqlPerf annotations**: No GC interference with nanosecond-precision timing
-- **Hyperpersistence Optimizer**: Stable performance during entity analysis
+- **Hypersistence Optimizer**: Stable performance during entity analysis
 - **datasource-proxy**: Consistent query logging without GC-induced delays
 - **Prometheus metrics**: Reliable metric collection timing
 
@@ -1561,20 +1561,20 @@ environments.
 ┌─────────────────────────────────────────────────────────────────────┐
 │ COMPLETE JPA/SQL OPTIMIZATION TOOL STACK ACROSS ENVIRONMENTS        │
 ├─────────────────┬───────────────────────────────────────────────────┤
-│ LOCAL DEV       │ • Hyperpersistence Optimizer (startup)            │
+│ LOCAL DEV       │ • Hypersistence Optimizer (startup)               │
 │                 │ • datasource-proxy (detailed logging)             │
 │                 │ • @TrackSqlPerf (all annotated, verbose)          │
 │                 │ • flexy-pool (pool metrics)                       │
 │                 │ Overhead: ~8-10% (acceptable for dev)             │
 ├─────────────────┼───────────────────────────────────────────────────┤
 │ TESTS           │ • QuickPerf (fail tests on violations)            │
-│                 │ • Hyperpersistence Optimizer (entity validation)  │
+│                 │ • Hypersistence Optimizer (entity validation)     │
 │                 │ • datasource-proxy (query tracking)               │
 │                 │ • @TrackSqlPerf (optional, can validate)          │
 │                 │ • Testcontainers (real DB)                        │
 │                 │ Overhead: N/A (test-only)                         │
 ├─────────────────┼───────────────────────────────────────────────────┤
-│ DEV             │ • Hyperpersistence Optimizer (startup)            │
+│ DEV             │ • Hypersistence Optimizer (startup)               │
 │                 │ • datasource-proxy (moderate logging)             │
 │                 │ • @TrackSqlPerf (all annotated, warnings)         │
 │                 │ • flexy-pool (pool metrics)                       │
@@ -1628,7 +1628,7 @@ export SPRING_PROFILES_ACTIVE=local
 
 **What you get:**
 
-- ✅ Hyperpersistence Optimizer startup validation
+- ✅ Hypersistence Optimizer startup validation
 - ✅ Detailed SQL logging with 100ms slow query threshold
 - ✅ @TrackSqlPerf enabled for all annotated methods
 - ✅ Flexy-pool with JMX + log reporters
@@ -1649,7 +1649,7 @@ export SPRING_PROFILES_ACTIVE=local
 - ✅ @TrackSqlPerf with soft warnings (no fail-fast)
 - ✅ Flexy-pool connection monitoring
 - ⚠️ QuickPerf available for automated test suite
-- ❌ Hyperpersistence Optimizer disabled for performance
+- ❌ Hypersistence Optimizer disabled for performance
 
 #### 3. Staging Environment (HARD GATE)
 
@@ -1666,7 +1666,7 @@ export SPRING_PROFILES_ACTIVE=local
 - 🚫 @TrackSqlPerf with FAIL-FAST enabled (blocks deployment)
 - 🚫 QuickPerf in CI tests (blocks deployment on SQL issues)
 - ✅ Flexy-pool monitoring
-- ❌ Hyperpersistence Optimizer disabled
+- ❌ Hypersistence Optimizer disabled
 
 #### 4. Production Environment
 

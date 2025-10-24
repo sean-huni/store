@@ -69,7 +69,7 @@ application:
       token-prefix: "Bearer "
 
 ---
-# Hyperpersistence Optimizer - Enabled for startup validation
+# hypersistence Optimizer - Enabled for startup validation
 hypersistence:
   optimizer:
     enabled: true

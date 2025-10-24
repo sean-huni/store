@@ -1,8 +1,9 @@
 package test.config;
 
-import com.example.store.aop.performance.EnhancedSqlPerformanceAspect;
+import com.example.store.aop.performance.SqlPerfAspect;
 import com.example.store.aop.performance.context.SqlPerformanceContext;
 import com.example.store.aop.performance.context.SqlPerformanceContextHolder;
+import com.example.store.config.sqltracking.SqlLoggingListener;
 import io.hypersistence.optimizer.HypersistenceOptimizer;
 import io.hypersistence.optimizer.core.config.JpaConfig;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -66,11 +67,11 @@ public class TestConfig {
     }
 
     @Bean
-    EnhancedSqlPerformanceAspect enhancedSqlPerformanceAspect(
+    SqlPerfAspect enhancedSqlPerformanceAspect(
             SqlPerformanceContextHolder contextHolder,
             MeterRegistry meterRegistry,
             com.example.store.config.sqltracking.SqlPerformanceTrackingProperties properties) {
-        return new EnhancedSqlPerformanceAspect(contextHolder, meterRegistry, properties);
+        return new SqlPerfAspect(contextHolder, meterRegistry, properties);
     }
 
     @Bean
@@ -79,14 +80,14 @@ public class TestConfig {
     }
 
     @Bean
-    com.example.store.config.sqltracking.CustomQueryLoggingListener customQueryLoggingListener() {
-        return new com.example.store.config.sqltracking.CustomQueryLoggingListener();
+    SqlLoggingListener customQueryLoggingListener(final MeterRegistry meterRegistry) {
+        return new SqlLoggingListener(meterRegistry);
     }
 
     @Bean
     BeanPostProcessor sqlPerformanceDataSourcePostProcessor(
             SqlPerformanceContextHolder contextHolder,
-            com.example.store.config.sqltracking.CustomQueryLoggingListener customQueryLoggingListener) {
+            SqlLoggingListener sqlLoggingListener) {
         return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) {
@@ -94,7 +95,7 @@ public class TestConfig {
                     return ProxyDataSourceBuilder
                             .create((DataSource) bean)
                             .name("SQL-Performance-Tracker-Test")
-                            .listener(customQueryLoggingListener)
+                            .listener(sqlLoggingListener)
                             .listener(new QueryExecutionListener() {
                                 @Override
                                 public void beforeQuery(ExecutionInfo executionInfo, List<QueryInfo> list) {

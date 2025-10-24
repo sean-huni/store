@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class EnhancedSqlPerformanceAspect {
+public class SqlPerfAspect {
 
     private final SqlPerformanceContextHolder contextHolder;
     private final MeterRegistry meterRegistry;

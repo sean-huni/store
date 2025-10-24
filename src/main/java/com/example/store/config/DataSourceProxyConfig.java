@@ -1,6 +1,6 @@
 package com.example.store.config;
 
-import com.example.store.config.sqltracking.CustomQueryLoggingListener;
+import com.example.store.config.sqltracking.SqlLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSource;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -21,7 +21,7 @@ public class DataSourceProxyConfig {
             matchIfMissing = true
     )
     public BeanPostProcessor dataSourceProxyBeanPostProcessor(
-            CustomQueryLoggingListener customListener) {
+            SqlLoggingListener customListener) {
 
         return new BeanPostProcessor() {
             @Override
