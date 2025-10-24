@@ -55,6 +55,9 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/prometheus").permitAll()  // Allow Prometheus metrics access
+                        .requestMatchers("/actuator/metrics").permitAll()      // Allow general metrics access
+                        .requestMatchers("/actuator/info").permitAll()         // Allow info endpoint access
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Protected endpoints
                         .requestMatchers("/customers/**", "/orders/**", "/products/**").authenticated()

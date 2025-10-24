@@ -60,6 +60,15 @@ sql-performance:
     detailed-logging: true
 
 ---
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      expiration: ${JWT_EXPIRATION:43200000} # 1/2 day
+      refreshExpiration: ${JWT_REFRESH_EXPIRATION:259200000}  # 3 days
+      token-prefix: "Bearer "
+
+---
 # Hyperpersistence Optimizer - Enabled for startup validation
 hypersistence:
   optimizer:
@@ -72,6 +81,6 @@ logging:
     com.example.store.aop.performance: DEBUG
     com.example.store.config.sqltracking: DEBUG
     net.ttddyy.dsproxy.listener: DEBUG
-    io.hypersistence.optimizer: INFO
+    io.hypersistence.optimizer: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

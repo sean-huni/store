@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -22,12 +23,14 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerMapper customerMapper;
 
     @Cacheable(value = "customers", key = "'all_page_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public List<CustomerDTO> findAllCustomers(final Pageable pageable) {
         final Page<Customer> customerPage = customerRepo.findAll(pageable);
         return customerMapper.toCustomerDTOs(customerPage.getContent());
     }
 
     @Cacheable(value = "customers", key = "'name_' + #name + '_page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public List<CustomerDTO> findCustomersNameContainingSubString(final String name, Pageable pageable) {
         return customerMapper.toCustomerDTOs(customerRepo.findCustomersByNameContainingIgnoreCase(name, pageable));
     }

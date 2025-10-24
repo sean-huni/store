@@ -26,7 +26,7 @@ public interface ProductMapper {
     List<ProductDTO> toProductDTOList(List<Product> products);
 
     // Custom mapping methods
-    default Set<Long> mapProductOrdersToOrderIds(List<ProductOrder> productOrders) {
+    default Set<Long> mapProductOrdersToOrderIds(final List<ProductOrder> productOrders) {
         if (productOrders == null) {
             return Collections.emptySet();
         }

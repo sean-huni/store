@@ -1,0 +1,40 @@
+# ./grafana/provisioning/datasources/grafana-datasource.yml
+# Enhanced Grafana provisioning file for Prometheus datasource
+# Optimized for SQL performance monitoring and cloud deployments
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090  # Docker service name from docker-compose
+    isDefault: true
+    editable: true
+
+    # JSON Data for advanced configuration
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 30s
+      timeInterval: 5s
+      # Disable exemplars if not needed (reduces query overhead)
+      exemplarTraceIdDestinations: [ ]
+      # Enable incremental query caching
+      incrementalQuerying: true
+      incrementalQueryOverlapWindow: 10m
+      # Disable Prometheus type
+      prometheusType: Prometheus
+      # Custom query parameters
+      customQueryParameters: ''
+      # Timeout settings
+      timeout: 60
+    
+    # Security settings
+    basicAuth: false
+    basicAuthUser: ''
+    withCredentials: false
+
+    # Version control
+    version: 1
+    
+    # Organization
+    orgId: 1

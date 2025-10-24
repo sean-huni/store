@@ -5,16 +5,11 @@ import io.hypersistence.optimizer.core.config.Config;
 import io.hypersistence.optimizer.core.config.JpaConfig;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.SessionFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.InfrastructureProxy;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.orm.jpa.hibernate.LocalSessionFactoryBean;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,21 +35,9 @@ public class HypersistenceConfig {
     }
 //
 
-    @Bean
-    public LocalSessionFactoryBean originalSessionFactory() {
-        LocalSessionFactoryBean localSessionFactoryBean = new LocalSessionFactoryBean();
-        localSessionFactoryBean.setBootstrapExecutor(new SimpleAsyncTaskExecutor());
-        return localSessionFactoryBean;
-    }
-
-    @Bean
-    @Primary
-    public SessionFactory sessionFactory(SessionFactory originalSessionFactory) {
-        if (originalSessionFactory instanceof InfrastructureProxy infrastructureProxy) {
-            return (SessionFactory) infrastructureProxy.getWrappedObject();
-        }
-        return originalSessionFactory;
-    }
+    // Removed problematic SessionFactory beans that were conflicting with Spring Boot's auto-configuration
+    // The HypersistenceOptimizer works directly with the auto-configured EntityManagerFactory
+    // These custom SessionFactory beans were causing bean resolution conflicts
 
     @EventListener(ApplicationReadyEvent.class)
     public void logOptimizationEvents() {

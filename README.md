@@ -963,6 +963,478 @@ and considerations for each component.
 - New language features and API improvements
 - Better compatibility with modern Spring Boot versions
 
+### ZGC Preference
+
+**ZGC (Z Garbage Collector)** is a low-latency garbage collector designed for applications requiring consistent response
+times. It's particularly beneficial for our SQL performance monitoring setup as it minimizes GC pauses that could
+interfere with precise timing measurements.
+
+#### Key Benefits
+
+- **Ultra-low latency**: Sub-millisecond pause times regardless of heap size
+- **Scalable**: Works efficiently from 8MB to 16TB heaps
+- **Concurrent**: Most GC work happens concurrently with application threads
+- **Predictable performance**: Ideal for monitoring applications with strict timing requirements
+
+#### Recommended Configuration
+
+```bash
+# Essential ZGC flags
+-XX:+UseZGC
+-XX:+UnlockExperimentalVMOptions    # Required for Java 11-16, optional for Java 17+
+-Xmx4g                             # Maximum heap size
+-Xms4g                             # Initial heap size (same as max for predictable performance)
+
+# Optional tuning parameters
+-XX:+UnlockDiagnosticVMOptions     # Enable diagnostic options
+-XX:ZCollectionInterval=5          # Force GC every 5s if allocation rate is low
+-XX:ZUncommitDelay=300            # Return unused memory to OS after 5 minutes
+-XX:ZPath=/tmp                    # Specify backing file path (Linux/macOS only)
+
+# Monitoring and logging (useful for performance analysis)
+-XX:+LogVMOutput
+-Xlog:gc*:gc.log:time
+```
+
+#### Memory Sizing Guidelines
+
+| Application Size | Recommended Heap    | Use Case                            |
+|:-----------------|:--------------------|:------------------------------------|
+| **Small/Dev**    | `-Xmx1g -Xms1g`     | Local development, testing          |
+| **Medium**       | `-Xmx4g -Xms4g`     | Production apps, moderate load      |
+| **Large**        | `-Xmx8g -Xms8g`     | High-load production systems        |
+| **Enterprise**   | `-Xmx16g+ -Xms16g+` | Large-scale enterprise applications |
+
+#### Production Example
+
+For our SQL monitoring application in production:
+
+```bash
+java -XX:+UseZGC \
+     -Xmx4g \
+     -Xms4g \
+     -XX:+UnlockDiagnosticVMOptions \
+     -XX:ZUncommitDelay=300 \
+     -jar store.jar
+```
+
+#### Performance Impact on SQL Monitoring
+
+ZGC's consistent low-latency characteristics make it ideal for our comprehensive SQL performance monitoring stack:
+
+- **@TrackSqlPerf annotations**: No GC interference with nanosecond-precision timing
+- **Hyperpersistence Optimizer**: Stable performance during entity analysis
+- **datasource-proxy**: Consistent query logging without GC-induced delays
+- **Prometheus metrics**: Reliable metric collection timing
+
+## ZGC for Cloud Kubernetes Deployments
+
+### Cloud-Native Benefits
+
+**ZGC with Java 25** provides exceptional advantages for containerized applications running in Kubernetes environments:
+
+#### 🚀 **Container Resource Efficiency**
+
+- **Memory elasticity**: ZGC automatically adapts to container memory limits without manual tuning
+- **CPU awareness**: Works seamlessly with K8s CPU quotas and cgroup limits
+- **Resource predictability**: Consistent memory usage patterns for better pod scheduling
+
+#### ⚡ **Kubernetes-Optimized Performance**
+
+- **Sub-millisecond pause times**: Critical for maintaining SLA during pod scaling events
+- **Rolling update compatibility**: Minimal disruption during K8s rolling deployments
+- **Horizontal scaling**: Consistent performance across pod replicas regardless of heap size
+
+#### 🔧 **Cloud Infrastructure Integration**
+
+- **Memory pressure handling**: Graceful behavior under K8s memory constraints
+- **OOM prevention**: Better memory management reduces pod restarts
+- **Observability**: Enhanced metrics integration with Prometheus/Grafana monitoring
+
+### Container-Optimized Configuration
+
+Our cloud-native Dockerfile (`.docker/Dockerfile`) implements ZGC optimizations specifically for Kubernetes:
+
+```bash
+# ZGC Configuration optimized for cloud/K8s
+-XX:+UseZGC
+-XX:+UnlockExperimentalVMOptions
+# Memory management with percentage-based allocation for containers
+-XX:MaxRAMPercentage=70.0      # Use 70% of container memory limit
+-XX:InitialRAMPercentage=40.0   # Start with 40% for faster startup
+-XX:MinRAMPercentage=20.0       # Minimum 20% for small containers
+# ZGC-specific tuning for containerized workloads
+-XX:ZCollectionInterval=5       # Frequent collections for container efficiency
+-XX:ZUncommitDelay=300          # Return unused memory to K8s after 5 minutes
+```
+
+#### Memory Sizing for Kubernetes Pods
+
+| Pod Memory Limit | ZGC Heap (70%) | Use Case                              | Recommended CPU |
+|:-----------------|:---------------|:--------------------------------------|:----------------|
+| **512Mi**        | ~358Mi         | Microservices, lightweight workloads  | 0.5-1.0 CPU     |
+| **1Gi**          | ~716Mi         | Standard Spring Boot applications     | 1.0-2.0 CPU     |
+| **2Gi**          | ~1.4Gi         | Medium-load applications with caching | 2.0-4.0 CPU     |
+| **4Gi**          | ~2.8Gi         | High-throughput SQL monitoring apps   | 4.0-8.0 CPU     |
+| **8Gi**          | ~5.6Gi         | Enterprise applications, heavy load   | 8.0-16.0 CPU    |
+
+### Kubernetes Deployment Example
+
+#### 1. **Pod Resource Configuration**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: store-app
+  template:
+    metadata:
+      labels:
+        app: store-app
+    spec:
+      containers:
+        - name: store-app
+          image: store:2.0.0
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1000m"
+            limits:
+              memory: "2Gi"      # ZGC will use ~1.4Gi (70%)
+              cpu: "2000m"
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "cloud"
+          # Health checks leverage our built-in endpoints
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+```
+
+#### 2. **Horizontal Pod Autoscaler (HPA)**
+
+ZGC's consistent performance makes it ideal for auto-scaling:
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: store-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: store-app
+  minReplicas: 3
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+```
+
+#### 3. **Pod Disruption Budget**
+
+Ensure availability during rolling updates:
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: store-app-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: store-app
+```
+
+### Cloud Provider Optimizations
+
+#### **AWS EKS**
+
+```bash
+# EKS-optimized JVM flags (added to our Dockerfile)
+-XX:+UseTransparentHugePages          # Leverage AWS Nitro system
+-XX:+UseLargePages                    # Better memory performance on EC2
+```
+
+#### **Google GKE**
+
+```bash
+# GKE-optimized flags for Google Cloud infrastructure
+-XX:+UseContainerSupport              # Already included in our config
+-XX:+PreferContainerQuotaForCPUCount  # Already included in our config
+```
+
+#### **Azure AKS**
+
+```bash
+# AKS-optimized configuration
+-XX:+ExitOnOutOfMemoryError           # Fast fail for Azure Load Balancer health
+-XX:+HeapDumpOnOutOfMemoryError       # Debug support with Azure Storage
+```
+
+### Production Monitoring Integration
+
+Our ZGC configuration integrates seamlessly with cloud monitoring:
+
+#### **Prometheus Metrics**
+
+```yaml
+# Automatically exposed via /actuator/prometheus
+jvm_gc_pause_seconds{gc="ZGC"}        # GC pause times (sub-millisecond)
+jvm_memory_used_bytes{area="heap"}    # Heap usage patterns
+jvm_gc_memory_allocated_bytes_total   # Allocation rate monitoring
+```
+
+#### **Grafana Dashboard Queries**
+
+```promql
+# ZGC Performance Dashboard
+rate(jvm_gc_pause_seconds_count{gc="ZGC"}[5m])         # GC frequency
+histogram_quantile(0.99, jvm_gc_pause_seconds{gc="ZGC"}) # 99th percentile pause time
+jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100  # Heap utilization %
+```
+
+### Troubleshooting Cloud Deployments
+
+#### **Common Issues & Solutions**
+
+| Issue                   | Symptom                             | Solution                                                   |
+|:------------------------|:------------------------------------|:-----------------------------------------------------------|
+| **OOM in small pods**   | Pod restarts, memory limit exceeded | Increase pod memory limit or reduce `-XX:MaxRAMPercentage` |
+| **Slow startup**        | ReadinessProbe timeouts             | Increase `-XX:InitialRAMPercentage` or readiness delay     |
+| **Memory not returned** | High memory usage after load        | Tune `-XX:ZUncommitDelay` to return memory faster          |
+| **Poor autoscaling**    | Inconsistent resource metrics       | Ensure proper resource requests/limits configuration       |
+
+#### **Debug Commands for K8s**
+
+```bash
+# Check ZGC status in running pod
+kubectl exec -it <pod-name> -- jcmd 1 GC.run_finalization
+kubectl exec -it <pod-name> -- jcmd 1 VM.info | grep -i zgc
+
+# Monitor GC logs
+kubectl logs <pod-name> | grep -i "zgc\|gc"
+
+# Resource usage monitoring
+kubectl top pods -l app=store-app
+```
+
+### Security Considerations
+
+Our cloud-native configuration includes security hardening:
+
+- **Non-root user**: Runs as UID 1000 for K8s security policies
+- **Read-only filesystem**: Application files are immutable
+- **Security policies**: Integration with Pod Security Standards
+- **Secret management**: Environment-based configuration for sensitive data
+
+This comprehensive ZGC setup ensures optimal performance, reliability, and security for cloud Kubernetes deployments
+while maintaining the precise SQL performance monitoring capabilities required by our application.
+
+## Deployment Architecture Comparison: Native GraalVM vs Vanilla JVM
+
+This project supports **two distinct deployment architectures**, each optimized for different use cases and cloud
+deployment scenarios. Both configurations have been enhanced with multi-stage builds and cloud-native optimizations.
+
+### 🚀 **Vanilla JVM Deployment** (Traditional Java Runtime)
+
+#### **Docker Configuration**: `.docker/Dockerfile`
+
+```bash
+# Build for traditional JVM deployment
+docker build -f .docker/Dockerfile -t store-jvm:2.0.0 .
+
+# Or use Cloud Native Buildpacks
+./gradlew bootBuildImageJvm
+```
+
+#### **Key Characteristics**
+
+| Aspect                  | Vanilla JVM            | Benefits                             |
+|:------------------------|:-----------------------|:-------------------------------------|
+| **Startup Time**        | 15-45 seconds          | Acceptable for long-running services |
+| **Memory Usage**        | 300-600MB+             | Full JVM feature set available       |
+| **Image Size**          | ~152MB (optimized)     | Multi-stage build with custom JRE    |
+| **Runtime Performance** | Excellent after warmup | JIT optimizations, profiling         |
+| **Debugging**           | Full JVM tooling       | Complete observability stack         |
+| **Compatibility**       | 100% Java ecosystem    | All libraries and frameworks         |
+
+#### **Optimizations Implemented**
+
+- **ZGC Garbage Collection**: Sub-millisecond pause times
+- **Virtual Threads**: Enhanced concurrency (Java 21+)
+- **Custom JRE**: jlink-optimized runtime (50% size reduction)
+- **Container Awareness**: Memory and CPU quota integration
+- **Multi-stage Build**: Dependency caching and layer optimization
+
+#### **Cloud Buildpack Environment (Enhanced)**
+
+```gradle
+// Vanilla JVM with ZGC optimizations
+environment = [
+    'BPL_JVM_JGCOPTIONS': '-XX:+UseZGC -XX:MaxRAMPercentage=75.0',
+    'BPL_JVM_OPTIONS': '--enable-preview -Djdk.virtualThreadScheduler.parallelism=16',
+    'BP_IMAGE_LABELS': 'java.version=25,gc.collector=ZGC,architecture=vanilla-jvm'
+]
+```
+
+### ⚡ **Native GraalVM Deployment** (Ahead-of-Time Compilation)
+
+#### **Docker Configuration**: `.docker/Dockerfile.native`
+
+```bash
+# Build for GraalVM native deployment
+docker build -f .docker/Dockerfile.native -t store-native:2.0.0 .
+
+# Or use Cloud Native Buildpacks
+./gradlew bootBuildImage  # Configured for native by default
+```
+
+#### **Key Characteristics**
+
+| Aspect                  | Native GraalVM        | Benefits                          |
+|:------------------------|:----------------------|:----------------------------------|
+| **Startup Time**        | <100ms                | Instant startup for serverless    |
+| **Memory Usage**        | 50-150MB              | Minimal memory footprint          |
+| **Image Size**          | ~80MB (estimated)     | Ultra-lightweight containers      |
+| **Runtime Performance** | Consistent, no warmup | Predictable performance           |
+| **Cold Start**          | Excellent             | Ideal for autoscaling, serverless |
+| **Resource Efficiency** | Superior              | Better pod density in K8s         |
+
+#### **Optimizations Implemented**
+
+- **Serial GC**: Optimal for native executables
+- **AOT Compilation**: No JIT overhead, predictable performance
+- **Static Linking**: Single executable with minimal dependencies
+- **Container Optimizations**: Multi-stage build with Alpine base
+- **Build-time Optimizations**: Enhanced compilation settings
+
+#### **Cloud Buildpack Environment (Enhanced)**
+
+```gradle
+// Native GraalVM with enhanced build arguments
+environment = [
+    'BP_NATIVE_IMAGE_BUILD_ARGUMENTS': '--gc=serial -march=native -Ob --no-fallback',
+    'BPL_JVM_JGCOPTIONS': '-XX:+UseZGC -Xmx14g -XX:MaxMetaspaceSize=3g', // Build JVM
+    'BP_IMAGE_LABELS': 'java.version=25-native,gc.collector=Serial,architecture=native-graalvm'
+]
+```
+
+### 📊 **Performance Comparison Matrix**
+
+| Metric                    | Vanilla JVM (ZGC) | Native GraalVM | Winner    |
+|:--------------------------|:------------------|:---------------|:----------|
+| **Cold Start**            | 15-45s            | <100ms         | 🥇 Native |
+| **Warm Performance**      | Excellent         | Good           | 🥇 JVM    |
+| **Memory Footprint**      | 300-600MB         | 50-150MB       | 🥇 Native |
+| **Image Size**            | ~152MB            | ~80MB          | 🥇 Native |
+| **Build Time**            | 2-5 minutes       | 5-15 minutes   | 🥇 JVM    |
+| **Debugging**             | Full tooling      | Limited        | 🥇 JVM    |
+| **Library Compatibility** | 100%              | 95%+           | 🥇 JVM    |
+| **Resource Cost**         | Higher            | Lower          | 🥇 Native |
+
+### 🎯 **Use Case Recommendations**
+
+#### **Choose Vanilla JVM When:**
+
+- **Development & Testing**: Full debugging capabilities needed
+- **Complex Applications**: Heavy use of reflection, dynamic proxies
+- **Long-running Services**: Performance matters more than startup time
+- **Full Java Ecosystem**: Need maximum library compatibility
+- **Observability**: Require complete JVM monitoring and profiling
+
+#### **Choose Native GraalVM When:**
+
+- **Serverless Functions**: Cold start performance critical
+- **Microservices**: Resource efficiency and cost optimization
+- **Container Density**: Running many instances in K8s
+- **Edge Computing**: Minimal resource environments
+- **Fast Scaling**: Rapid horizontal scaling requirements
+
+### 🔧 **Build Commands Summary**
+
+#### **Development (Quick Iterations)**
+
+```bash
+# Traditional JVM - Fast builds, full debugging
+./gradlew bootBuildImageJvm
+docker run -p 8080:8080 store-jvm:2.0.0
+```
+
+#### **Production (Resource Efficiency)**
+
+```bash
+# Native GraalVM - Optimized for cloud deployment
+./gradlew bootBuildImage
+docker run -p 8080:8080 store-native:2.0.0
+```
+
+#### **Manual Docker Builds**
+
+```bash
+# Multi-stage JVM build with custom JRE
+docker build -f .docker/Dockerfile -t store-jvm:latest .
+
+# Multi-stage Native build with GraalVM optimization
+docker build -f .docker/Dockerfile.native -t store-native:latest .
+```
+
+### 🚦 **Migration Strategy**
+
+1. **Start with Vanilla JVM** for development and testing
+2. **Profile and optimize** SQL performance monitoring
+3. **Test Native GraalVM** compatibility with your workload
+4. **Deploy Native** for production cost optimization
+5. **Monitor and compare** real-world performance metrics
+
+### ⚠️ **Important Considerations**
+
+#### **Native GraalVM Limitations**
+
+- Limited reflection support (mostly resolved with proper configuration)
+- No dynamic class loading at runtime
+- Longer build times (5-15 minutes vs 2-5 minutes)
+- Some libraries may require additional native-image configuration
+
+#### **SQL Performance Monitoring Compatibility**
+
+Both deployment architectures fully support our comprehensive SQL performance monitoring stack:
+
+- ✅ **@TrackSqlPerf annotations** work identically
+- ✅ **Hypersistence Optimizer** (build-time analysis for native)
+- ✅ **datasource-proxy** logging and monitoring
+- ✅ **Prometheus metrics** collection
+- ✅ **Grafana dashboards** and alerting
+
+This dual-architecture approach provides maximum flexibility for different deployment scenarios while maintaining
+consistent SQL performance monitoring capabilities across both deployment types.
+
 ## Spring Boot 4.0.0-M3 Upgrade
 
 ### Major Changes

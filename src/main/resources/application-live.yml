@@ -86,15 +86,24 @@ application:
       refreshExpiration: ${JWT_REFRESH_EXPIRATION:259200000}  # 3 days
 
 ---
-# Production monitoring - Essential endpoints only
+# Production monitoring - Essential endpoints for observability
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus,metrics  # Include essential monitoring endpoints
+      base-path: /actuator
   endpoint:
     health:
       show-details: never  # Security best practice
+    prometheus:
+      enabled: true  # Essential for monitoring
+    metrics:
+      enabled: true  # Essential for monitoring
+  prometheus:
+    metrics:
+      export:
+        enabled: true  # Ensure Prometheus export is enabled
 
 ---
 # Production logging - Minimal overhead

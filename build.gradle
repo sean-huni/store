@@ -161,7 +161,6 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-liquibase'
@@ -172,6 +171,10 @@ dependencies {
     implementation 'com.google.code.gson:gson'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop
     implementation 'org.springframework.boot:spring-boot-starter-aop:'.concat(aopVersion)
+
+    // Monitoring and Metrics dependencies
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Spring Security dependencies
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -404,20 +407,124 @@ checkstyleTest {
 
 // qualityCheck task is defined in jacoco.gradle
 
-//tasks.named('bootBuildImage') {
-//    builder = 'paketobuildpacks/builder-jammy-tiny'
-//    imageName = "${project.name}:${project.version}"
-//    environment = [
-//            'BP_JVM_VERSION': "${javaVersion}"
-//    ]
-//}
+// =============================================================================
+// CLOUD BUILDPACKS CONFIGURATION - Enhanced with Docker Optimizations
+// =============================================================================
 
-// For Native Builds
+// Custom task for JVM buildpack image (Vanilla JVM)
+tasks.register('bootBuildImageJvm') {
+    group = 'build'
+    description = 'Builds a JVM-based container image using Cloud Native Buildpacks with ZGC optimizations'
+
+    doLast {
+        tasks.bootBuildImage {
+            builder = 'paketobuildpacks/builder-jammy-tiny'
+            imageName = "${project.name}-jvm:${project.version}"
+
+            // Enhanced environment variables from Dockerfile optimizations
+            environment = [
+                    // Core Java Configuration
+                    'BP_JVM_VERSION'                    : "${javaVersion}",
+                    'BP_JVM_TYPE'                       : 'JDK',  // Full JDK for development flexibility
+
+                    // Memory Management (from Dockerfile optimizations)
+                    'JAVA_TOOL_OPTIONS'                 : '-Duser.timezone=UTC -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom -Dspring.backgroundpreinitializer.ignore=true -Djava.awt.headless=true',
+                    'BPL_JVM_HEAD_ROOM'                 : '10',   // Reserve 10% of memory for non-heap
+                    'BPL_JVM_LOADED_CLASS_COUNT'        : '35',   // Optimize metaspace for Spring Boot apps
+                    'BPL_JVM_THREAD_COUNT'              : '50',   // Optimize for concurrent requests
+
+                    // ZGC Configuration (from Dockerfile JVM optimizations)
+                    'BPL_JVM_JGCOPTIONS'                : '-XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=40.0 -XX:MinRAMPercentage=25.0 -XX:ZCollectionInterval=2 -XX:ZUncommitDelay=180 -XX:+UseLargePages',
+
+                    // Virtual Threads & Performance
+                    'BPL_JVM_OPTIONS'                   : '--enable-preview -Djdk.virtualThreadScheduler.parallelism=16 -Djdk.virtualThreadScheduler.maxPoolSize=512 -Djdk.virtualThreadScheduler.minRunnable=4',
+
+                    // Container Integration
+                    'BPL_JVM_SECURITY_PROVIDERS'        : 'true',
+                    'BP_IMAGE_LABELS'                   : 'version=2.0.0,java.version=25,gc.collector=ZGC,architecture=vanilla-jvm,optimization=buildpack-enhanced',
+
+                    // Cloud Native & Monitoring
+                    'BP_LIVE_RELOAD_ENABLED'            : 'false', // Disable for production
+                    'BPL_DEBUG_ENABLED'                 : 'false',
+                    'BPL_JMX_ENABLED'                   : 'false', // Reduce overhead
+                    'BPL_JAVA_NMT_ENABLED'              : 'true',  // Enable Native Memory Tracking
+
+                    // Spring Boot Optimizations
+                    'BPL_SPRING_CLOUD_BINDINGS_DISABLED': 'false',
+                    'BP_SPRING_AOT_ENABLED'             : 'true'   // Enable AOT optimizations
+            ]
+
+            // Add build-time optimizations
+            buildCache = true
+            publish = false
+
+            // Enhanced bindings for cloud deployment
+            bindings = [
+                    "${projectDir}/platform/bindings/ca-certificates",
+                    "${projectDir}/platform/bindings/dependency-mapping"
+            ]
+        }.execute()
+
+        println "✅ JVM buildpack image created: ${project.name}-jvm:${project.version}"
+    }
+}
+
+// Enhanced Native buildpack image configuration
 tasks.named('bootBuildImage') {
+    group = 'build'
+    description = 'Builds a GraalVM native container image using Cloud Native Buildpacks with enhanced optimizations'
+
     builder = 'paketobuildpacks/builder-jammy-tiny'
-    imageName = "${project.name}:${project.version}"
+    imageName = "${project.name}-native:${project.version}"
+
+    // Enhanced environment variables from Dockerfile.native optimizations
     environment = [
-            'BP_NATIVE_IMAGE': 'true',   // For native images
-            'BP_JVM_VERSION' : "${javaVersion}"
+            // Core Native Configuration
+            'BP_NATIVE_IMAGE'                   : 'true',
+            'BP_JVM_VERSION'                    : "${javaVersion}",
+            'BP_JVM_TYPE'                       : 'JDK',  // Full JDK needed for native compilation
+
+            // Native Image Build Configuration (from Dockerfile.native optimizations)
+            'BP_NATIVE_IMAGE_BUILD_ARGUMENTS'   : '--gc=serial -march=native -Ob --no-fallback --enable-url-protocols=http,https --enable-monitoring=heapdump,jfr --initialize-at-build-time=org.slf4j,ch.qos.logback -H:+ReportExceptionStackTraces -H:+AddAllCharsets',
+            'BP_NATIVE_IMAGE_BUILT_MODULE'      : 'com.example.store.Application',
+
+            // Build-time Memory (from native-builder stage optimizations)
+            'BPL_JVM_HEAD_ROOM'                 : '5',    // Less overhead for native compilation
+            'BPL_JVM_LOADED_CLASS_COUNT'        : '50',   // Higher for native compilation phase
+            'BPL_JVM_THREAD_COUNT'              : '4',    // Optimize for build parallelism
+
+            // Native Build JVM Configuration (compiler JVM, not runtime)
+            'JAVA_TOOL_OPTIONS'                 : '-Duser.timezone=UTC -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom -Dspring.backgroundpreinitializer.ignore=true',
+            'BPL_JVM_JGCOPTIONS'                : '-XX:+UseZGC -Xmx14g -XX:MaxMetaspaceSize=3g -XX:+UseContainerSupport',
+
+            // Native Runtime Configuration
+            'BP_NATIVE_IMAGE_ENV_VARS'          : 'SPRING_PROFILES_ACTIVE=native:SERVER_SHUTDOWN=graceful:SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE=30s:SPRING_NATIVE=true:GRAALVM_NATIVE_IMAGE=true',
+
+            // Container Optimizations
+            'BP_IMAGE_LABELS'                   : 'version=2.0.0,java.version=25-native,gc.collector=Serial,architecture=native-graalvm,optimization=buildpack-native-enhanced',
+
+            // Native-specific optimizations
+            'BP_LIVE_RELOAD_ENABLED'            : 'false',
+            'BPL_DEBUG_ENABLED'                 : 'false',
+            'BPL_JMX_ENABLED'                   : 'false', // Not available in native
+
+            // Spring Native Configuration
+            'BP_SPRING_AOT_ENABLED'             : 'true',
+            'BPL_SPRING_CLOUD_BINDINGS_DISABLED': 'false'
+    ]
+
+    // Enhanced build configuration
+    buildCache = true
+    publish = false
+    verboseLogging = project.hasProperty('verbose')
+
+    // Cloud deployment optimizations
+    createdDate = 'now'
+    applicationName = project.name
+
+    // Enhanced bindings for native compilation
+    bindings = [
+            "${projectDir}/platform/bindings/ca-certificates",
+            "${projectDir}/platform/bindings/native-image-config"
     ]
 }

@@ -1,0 +1,145 @@
+# ./prometheus.yml - Enhanced SQL Performance Monitoring with Categorized Metrics
+global:
+  scrape_interval: 5s
+  evaluation_interval: 8s
+
+scrape_configs:
+  # =============================================================================
+  # SQL PERFORMANCE MONITORING - CATEGORIZED BY COMPONENT
+  # =============================================================================
+  
+  # 1. Track-SQL-Perf - Custom @TrackSqlPerf annotation metrics
+  - job_name: 'track-sql-perf'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 5s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Keep only sql.performance.* metrics for track-sql-perf category
+      - source_labels: [ __name__ ]
+        regex: 'sql\.performance\..*'
+        action: keep
+      # Add component label for Grafana categorization
+      - target_label: component
+        replacement: 'track-sql-perf'
+      # Add monitoring_category label for dashboard filtering
+      - target_label: monitoring_category
+        replacement: 'sql-performance-tracking'
+
+  # 2. Datasource-Proxy - SQL query logging and monitoring metrics
+  - job_name: 'datasource-proxy'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 5s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Keep datasource-proxy related metrics (from gavlyukovskiy library)
+      - source_labels: [ __name__ ]
+        regex: '(datasource_proxy_.*|connection_.*|query_.*|p6spy_.*)'
+        action: keep
+      # Add component label for Grafana categorization
+      - target_label: component
+        replacement: 'datasource-proxy'
+      # Add monitoring_category label for dashboard filtering
+      - target_label: monitoring_category
+        replacement: 'query-logging'
+
+  # 3. Flexy-Pool - Connection pool monitoring metrics
+  - job_name: 'flexy-pool'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 5s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Keep flexy-pool connection metrics
+      - source_labels: [ __name__ ]
+        regex: '(flexy_pool_.*|connection_pool_.*|hikari_.*|data_source_.*)'
+        action: keep
+      # Add component label for Grafana categorization
+      - target_label: component
+        replacement: 'flexy-pool'
+      # Add monitoring_category label for dashboard filtering
+      - target_label: monitoring_category
+        replacement: 'connection-pool-monitoring'
+
+  # 4. Hyperpersistence-Optimizer - JPA optimization metrics (startup validation)
+  - job_name: 'hyperpersistence-optimizer'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s  # Less frequent as this is startup validation
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 5s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Keep hypersistence optimizer metrics
+      - source_labels: [ __name__ ]
+        regex: '(hypersistence_.*|optimizer_.*|jpa_.*|hibernate_.*)'
+        action: keep
+      # Add component label for Grafana categorization
+      - target_label: component
+        replacement: 'hyperpersistence-optimizer'
+      # Add monitoring_category label for dashboard filtering
+      - target_label: monitoring_category
+        replacement: 'jpa-optimization'
+
+  # =============================================================================
+  # GENERAL APPLICATION METRICS
+  # =============================================================================
+
+  # 5. Application Health & General Metrics - Everything else for overview dashboards
+  - job_name: 'spring-boot-store-general'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 5s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Exclude SQL monitoring metrics (they're handled by specific jobs above)
+      - source_labels: [ __name__ ]
+        regex: '(sql\.performance\..*|datasource_proxy_.*|connection_.*|query_.*|p6spy_.*|flexy_pool_.*|connection_pool_.*|hikari_.*|data_source_.*|hypersistence_.*|optimizer_.*)'
+        action: drop
+      # Add component label for general metrics
+      - target_label: component
+        replacement: 'application-general'
+      # Add monitoring_category label
+      - target_label: monitoring_category
+        replacement: 'application-health'
+
+  # 6. JVM Metrics - Separate job for JVM-specific monitoring
+  - job_name: 'spring-boot-store-jvm'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 3s
+    static_configs:
+      #      - targets: ['localhost:8080'] # Localhost (for local dev without Docker)
+      - targets: [ 'host.docker.internal:8080' ] # Docker Container to Host
+    scrape_timeout: 3s
+    params:
+      format: [ 'prometheus' ]
+    metric_relabel_configs:
+      # Keep only JVM metrics
+      - source_labels: [ __name__ ]
+        regex: '(jvm_.*|process_.*|system_.*)'
+        action: keep
+      # Add component label for JVM metrics
+      - target_label: component
+        replacement: 'jvm'
+      # Add monitoring_category label
+      - target_label: monitoring_category
+        replacement: 'jvm-performance'

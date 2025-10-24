@@ -88,3 +88,4 @@ sql-performance:
 logging:
   level:
     log4j.category.Hypersistence-Optimizer: INFO
+

@@ -5,7 +5,28 @@ server.compression:
   min-response-size: 1KB
 
 ---
+# Default monitoring - Essential endpoints for observability
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics  # Include essential monitoring endpoints
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never  # Security best practice
+    prometheus:
+      enabled: true  # Essential for monitoring
+    metrics:
+      enabled: true  # Essential for monitoring
+  prometheus:
+    metrics:
+      export:
+        enabled: true  # Ensure Prometheus export is enabled
+---
 spring:
+  application:
+    name: store-app
   threads:
     virtual:
       enabled: true # Performance enhancements when platform thread is freed while the virtual thread parks. This improves scalability for blocking workloads.
@@ -35,8 +56,11 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
   datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost:5433}/${DB_NAME:store}
+    username: ${DB_USER:admin}
+    password: ${DB_PASS:admin}
     hikari:
-      auto-commit: true
+      auto-commit: false  # Disable auto-commit for optimal Hibernate performance
       connection-timeout: 2000
       minimum-idle: 5
       maximum-pool-size: 65
@@ -64,4 +88,4 @@ sql-performance:
 ---
 logging:
   level:
-    log4j.category.Hypersistence-Optimizer: INFO
+    log4j.category.Hypersistence\ Optimizer: DEBUG

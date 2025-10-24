@@ -8,6 +8,7 @@ import com.example.store.service.store.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -76,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
      * @return a list of ProductDTO objects containing product details and their associated order IDs
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> findAllProducts(final Pageable pageable) {
         final var productsPage = productRepo.findAll(pageable);
 
