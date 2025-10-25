@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class DataSourceProxyConfig {
@@ -21,7 +20,8 @@ public class DataSourceProxyConfig {
             matchIfMissing = true
     )
     public BeanPostProcessor dataSourceProxyBeanPostProcessor(
-            SqlLoggingListener sqlLoggingListener) {
+            SqlLoggingListener sqlLoggingListener,
+            DataSourceProxyProperties dataSourceProxyProperties) {
 
         return new BeanPostProcessor() {
             @Override
@@ -30,11 +30,11 @@ public class DataSourceProxyConfig {
 
                     return ProxyDataSourceBuilder
                             .create((DataSource) bean)
-                            .name("SQL-Performance-Proxy")
+                            .name("Slow-SQL-Datasource-Proxy")
                             .listener(sqlLoggingListener)
                             .multiline()
                             .countQuery()
-                            .logSlowQueryBySlf4j(120, TimeUnit.MILLISECONDS)
+                            .logSlowQueryBySlf4j(dataSourceProxyProperties.getThreshold(), dataSourceProxyProperties.getTimeUnit())
                             .build();
                 }
                 return bean;

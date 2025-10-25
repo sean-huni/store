@@ -24,31 +24,29 @@ decorator:
   datasource:
     enabled: true
     datasource-proxy:
-      enabled: true
       count-query: true
       logging: slf4j
       multiline: true
       query:
-        log-slow-query: true
-        slow-query-threshold: 100  # Lower threshold for development
         count-query: true
         log-level: debug
         enable-logging: true
       slow-query:
         enable-logging: true
-        log-level: warn
+        log-level: debug
+        threshold: 100  # Lower threshold for development
+        time-unit: MILLISECONDS
     flexy-pool:
-      enabled: true
       acquisition-strategy:
         increment-pool:
           max-overgrow-pool-size: 20
       metrics:
         reporter:
           jmx:
+            enabled: true
             auto-start: true
-          log:
-            auto-start: true
-            log-interval: 30
+#          log:
+#            millis: 300000
 
 ---
 # SQL Performance Tracking Configuration - Full monitoring for local dev
