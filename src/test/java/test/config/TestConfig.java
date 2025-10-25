@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Profile;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -81,11 +82,13 @@ public class TestConfig {
     }
 
     @Bean
+    @Profile("test")
     SqlLoggingListener customQueryLoggingListener(final MeterRegistry meterRegistry, final SqlPerfContextHolder contextHolder) {
         return new SqlLoggingListener(meterRegistry, contextHolder);
     }
 
     @Bean
+    @Profile("test")
     BeanPostProcessor sqlPerformanceDataSourcePostProcessor(
             final SqlPerfContextHolder contextHolder,
             final SqlLoggingListener sqlLoggingListener) {

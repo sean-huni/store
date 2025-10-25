@@ -21,7 +21,7 @@ public class DataSourceProxyConfig {
             matchIfMissing = true
     )
     public BeanPostProcessor dataSourceProxyBeanPostProcessor(
-            SqlLoggingListener customListener) {
+            SqlLoggingListener sqlLoggingListener) {
 
         return new BeanPostProcessor() {
             @Override
@@ -31,10 +31,10 @@ public class DataSourceProxyConfig {
                     return ProxyDataSourceBuilder
                             .create((DataSource) bean)
                             .name("SQL-Performance-Proxy")
-                            .listener(customListener)
+                            .listener(sqlLoggingListener)
                             .multiline()
                             .countQuery()
-                            .logSlowQueryBySlf4j(300, TimeUnit.MILLISECONDS)
+                            .logSlowQueryBySlf4j(120, TimeUnit.MILLISECONDS)
                             .build();
                 }
                 return bean;

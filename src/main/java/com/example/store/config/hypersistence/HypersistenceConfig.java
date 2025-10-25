@@ -41,9 +41,9 @@ public class HypersistenceConfig {
 
     @EventListener(ApplicationReadyEvent.class)
     public void logOptimizationEvents() {
-        log.info("✨ " + "=".repeat(80));
+        log.info("✨ %s".formatted("=".repeat(80)));
         log.info("✨ Hypersistence Optimizer - Startup Validation Results");
-        log.info("✨ " + "=".repeat(80));
+        log.info("✨ %s".formatted("=".repeat(80)));
 
         // Collect and report these
         // The optimizer will log warnings automatically during startup
