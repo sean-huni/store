@@ -25,7 +25,7 @@ public class UserRegistrationService {
 
     @Transactional
     public AuthRespDTO register(final RegReqDTO request) {
-        log.info("Registering new user with email: {}", request.email());
+        log.info("🔐 Registering new user with email: {}", request.email());
 
         // Check if user already exists
         if (userRepo.existsByEmail(request.email())) {
@@ -51,7 +51,7 @@ public class UserRegistrationService {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        log.info("User registered successfully: {}", user.getEmail());
+        log.info("🔐 User registered successfully: {}", user.getEmail());
 
         return AuthRespDTO.builder()
                 .accessToken(accessToken)

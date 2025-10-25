@@ -1,6 +1,6 @@
 package com.example.store.aop.performance;
 
-import com.example.store.aop.performance.context.SqlPerformanceContext;
+import com.example.store.aop.performance.context.SqlPerfContext;
 import lombok.Builder;
 
 import java.util.List;
@@ -14,7 +14,7 @@ record PerformanceReport(
         long queryExecutionTime,
         long queryExecutionTimeNanos,
         int queryCount,
-        List<SqlPerformanceContext.QueryExecution> queries,
+        List<SqlPerfContext.QueryExecution> queries,
         Object[] methodArgs,
         TimeUnit timeUnit
 ) {

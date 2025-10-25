@@ -10,6 +10,6 @@ import org.springframework.context.annotation.Configuration;
         matchIfMissing = true
 )
 @Configuration
-public class SqlPerformanceTrackingConfig {
+public class SqlPerfTrackingConfig {
     // Configuration beans...
 }

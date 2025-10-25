@@ -1,7 +1,7 @@
 package com.example.store.config.sqltracking;
 
-import com.example.store.aop.performance.context.SqlPerformanceContext;
-import com.example.store.aop.performance.context.SqlPerformanceContextHolder;
+import com.example.store.aop.performance.context.SqlPerfContext;
+import com.example.store.aop.performance.context.SqlPerfContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import net.ttddyy.dsproxy.ExecutionInfo;
 import net.ttddyy.dsproxy.QueryInfo;
@@ -23,8 +23,8 @@ public class SqlPerfDSConfig { // Sql-Performance-DataSource-Config
 
     @Bean
     public static BeanPostProcessor sqlPerfDSPostProcessor(
-            SqlPerformanceContextHolder contextHolder,
-            SqlLoggingListener sqlLoggingListener) {
+            final SqlPerfContextHolder contextHolder,
+            final SqlLoggingListener sqlLoggingListener) {
 
         return new BeanPostProcessor() {
             @Override
@@ -37,12 +37,12 @@ public class SqlPerfDSConfig { // Sql-Performance-DataSource-Config
                             .listener(sqlLoggingListener)
                             .listener(new QueryExecutionListener() {
                                 @Override
-                                public void beforeQuery(ExecutionInfo executionInfo, List<QueryInfo> list) {
-                                    SqlPerformanceContext context = contextHolder.peek();
-                                    String operationName = context != null ? context.getOperationName() : "Unknown";
+                                public void beforeQuery(final ExecutionInfo executionInfo, final List<QueryInfo> list) {
+                                    final SqlPerfContext context = contextHolder.peek();
+                                    final String operationName = context != null ? context.getOperationName() : "Unknown";
 
                                     if (log.isDebugEnabled()) {
-                                        log.debug("SQL Execution Starting - Operation: {} | Connection: {} | Batch: {} | Queries: {}",
+                                        log.debug("🔍 SQL Execution Starting - Operation: {} | Connection: {} | Batch: {} | Queries: {}",
                                                 operationName,
                                                 executionInfo.getConnectionId(),
                                                 executionInfo.isBatch(),
@@ -50,16 +50,16 @@ public class SqlPerfDSConfig { // Sql-Performance-DataSource-Config
 
                                         // Log individual queries for debugging
                                         list.forEach(queryInfo ->
-                                                log.debug("  Query: {}", queryInfo.getQuery().replaceAll("\\s+", " ").trim())
+                                                log.debug("🔍 Query: {}", queryInfo.getQuery().replaceAll("\\s+", " ").trim())
                                         );
                                     } else {
-                                        log.info("Test SQL Starting - Operation: {} | Queries: {}", operationName, list.size());
+                                        log.info("📊 Test SQL Starting - Operation: {} | Queries: {}", operationName, list.size());
                                     }
                                 }
 
                                 @Override
-                                public void afterQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
-                                    SqlPerformanceContext context = contextHolder.peek();
+                                public void afterQuery(final ExecutionInfo execInfo, final List<QueryInfo> queryInfoList) {
+                                    final SqlPerfContext context = contextHolder.peek();
                                     if (context != null) {
                                         for (final QueryInfo queryInfo : queryInfoList) {
                                             context.recordQuery(queryInfo.getQuery(), execInfo.getElapsedTime());

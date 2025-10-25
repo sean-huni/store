@@ -49,7 +49,7 @@ public class TokenRefreshService {
 
             String newAccessToken = jwtService.generateAccessToken(user);
 
-            log.info("Token refreshed for user: {}", user.getEmail());
+            log.info("🔐 Token refreshed for user: {}", user.getEmail());
 
             return AuthRespDTO.builder()
                     .accessToken(newAccessToken)

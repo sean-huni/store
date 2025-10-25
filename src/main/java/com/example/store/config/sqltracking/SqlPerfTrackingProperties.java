@@ -7,7 +7,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "sql-performance.tracking")
 @Validated
 @Component
-public record SqlPerformanceTrackingProperties(
+public record SqlPerfTrackingProperties(
         boolean enabled,
         boolean failFastOnError,
         boolean logQueries,
@@ -17,7 +17,7 @@ public record SqlPerformanceTrackingProperties(
         double warnThresholdMultiplier,
         double errorThresholdMultiplier
 ) {
-    public SqlPerformanceTrackingProperties() {
+    public SqlPerfTrackingProperties() {
         this(true, false, true, true, false, false, 1.0, 1.0);
     }
 }

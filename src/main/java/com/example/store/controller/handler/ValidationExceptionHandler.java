@@ -66,7 +66,7 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public ErrorDTO handleMethodArgumentNotValid(final MethodArgumentNotValidException ex) {
-        log.debug("Validation failed for request", ex);
+        log.debug("🐛 Validation failed for request", ex);
 
         List<ViolationDTO> violations = fieldErrorExtractor
                 .extractErrorObjects(ex.getBindingResult().getFieldErrors());
@@ -87,7 +87,7 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
     public ErrorDTO handleHandlerMethodValidation(final HandlerMethodValidationException ex) {
-        log.debug("Method parameter validation failed", ex);
+        log.debug("🐛 Method parameter validation failed", ex);
 
         // Check if this is a Bearer token validation failure by examining error messages
         boolean isBearerTokenValidation = ex.getAllErrors().stream()
@@ -125,7 +125,7 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public ErrorDTO handleConstraintViolation(final ConstraintViolationException ex) {
-        log.debug("Constraint validation failed", ex);
+        log.debug("🐛 Constraint validation failed", ex);
 
         List<ViolationDTO> violations = fieldErrorExtractor.extractErrorObjects(ex);
 
@@ -145,7 +145,7 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDTO handleCustomerNotFound(final CustomerNotFoundException ex) {
-        log.debug("Customer not found: {}", ex.getMessage());
+        log.debug("🐛 Customer not found: {}", ex.getMessage());
 
         return createErrorResponse(
                 HttpStatus.NOT_FOUND,
@@ -163,7 +163,7 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
     public ErrorDTO handleEmailAlreadyExists(final EmailAlreadyExistsException ex) {
-        log.debug("Email already exists: {}", Arrays.stream(ex.getArgs()).findFirst().orElseThrow());
+        log.debug("🐛 Email already exists: {}", Arrays.stream(ex.getArgs()).findFirst().orElseThrow());
 
         return createErrorResponse(
                 HttpStatus.CONFLICT,

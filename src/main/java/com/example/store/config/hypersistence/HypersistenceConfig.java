@@ -29,7 +29,7 @@ public class HypersistenceConfig {
         Map<String, Object> properties = new HashMap<>();
         properties.put(Config.Property.Session.TIMEOUT_MILLIS, 1000);
         properties.put(Config.Property.Session.FLUSH_TIMEOUT_MILLIS, 500);
-        log.info("Initializing Hypersistence Optimizer...");
+        log.info("✨ Initializing Hypersistence Optimizer...");
 
         return new HypersistenceOptimizer(new JpaConfig(entityManagerFactory).setProperties(properties));
     }
@@ -41,11 +41,11 @@ public class HypersistenceConfig {
 
     @EventListener(ApplicationReadyEvent.class)
     public void logOptimizationEvents() {
-        log.info("=".repeat(80));
-        log.info("Hypersistence Optimizer - Startup Validation Results");
-        log.info("=".repeat(80));
+        log.info("✨ " + "=".repeat(80));
+        log.info("✨ Hypersistence Optimizer - Startup Validation Results");
+        log.info("✨ " + "=".repeat(80));
 
-        // In a real app, you might want to collect and report these
+        // Collect and report these
         // The optimizer will log warnings automatically during startup
 
         /*

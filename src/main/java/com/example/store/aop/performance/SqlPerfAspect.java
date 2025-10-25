@@ -1,9 +1,9 @@
 package com.example.store.aop.performance;
 
 import com.example.store.aop.performance.annotation.TrackSqlPerf;
-import com.example.store.aop.performance.context.SqlPerformanceContext;
-import com.example.store.aop.performance.context.SqlPerformanceContextHolder;
-import com.example.store.config.sqltracking.SqlPerformanceTrackingProperties;
+import com.example.store.aop.performance.context.SqlPerfContext;
+import com.example.store.aop.performance.context.SqlPerfContextHolder;
+import com.example.store.config.sqltracking.SqlPerfTrackingProperties;
 import com.example.store.exception.SqlPerformanceException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -29,10 +29,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class SqlPerfAspect {
-
-    private final SqlPerformanceContextHolder contextHolder;
+    private final SqlPerfContextHolder contextHolder;
     private final MeterRegistry meterRegistry;
-    private final SqlPerformanceTrackingProperties properties;
+    private final SqlPerfTrackingProperties properties;
 
     @Around("@annotation(trackSqlPerf)")
     public Object trackSqlExecution(final ProceedingJoinPoint joinPoint, final TrackSqlPerf trackSqlPerf) throws Throwable {
@@ -44,7 +43,7 @@ public class SqlPerfAspect {
         }
 
         final String operationName = determineOperationName(joinPoint, trackSqlPerf);
-        final SqlPerformanceContext context = new SqlPerformanceContext(operationName);
+        final SqlPerfContext context = new SqlPerfContext(operationName);
 
         contextHolder.push(context);
 
@@ -72,16 +71,16 @@ public class SqlPerfAspect {
         }
     }
 
-    private void analyzePerformance(final SqlPerformanceContext context, final TrackSqlPerf config, final long durationNanos,
+    private void analyzePerformance(final SqlPerfContext context, final TrackSqlPerf config, final long durationNanos,
                                     final ProceedingJoinPoint joinPoint) {
 
         // Convert nanoseconds to configured unit
-        TimeUnit targetUnit = config.timeUnit();
-        long duration = targetUnit.convert(durationNanos, TimeUnit.NANOSECONDS);
+        final TimeUnit targetUnit = config.timeUnit();
+        final long duration = targetUnit.convert(durationNanos, TimeUnit.NANOSECONDS);
 
-        int queryCount = context.getQueryCount();
-        long queryTimeNanos = context.getTotalQueryTime();
-        long queryTime = targetUnit.convert(queryTimeNanos, TimeUnit.NANOSECONDS);
+        final int queryCount = context.getQueryCount();
+        final long queryTimeNanos = context.getTotalQueryTime();
+        final long queryTime = targetUnit.convert(queryTimeNanos, TimeUnit.NANOSECONDS);
 
         // Build performance report
         final var report = PerformanceReport.builder()
@@ -135,7 +134,7 @@ public class SqlPerfAspect {
         // Log detailed timing for critical operations
         if (config.timeUnit() == TimeUnit.MICROSECONDS ||
                 config.timeUnit() == TimeUnit.NANOSECONDS) {
-            log.debug("Precise timing for {}: {}ns ({}μs, {}ms)",
+            log.debug("⚡ Precise timing for {}: {}ns ({}μs, {}ms)",
                     context.getOperationName(),
                     durationNanos,
                     TimeUnit.MICROSECONDS.convert(durationNanos, TimeUnit.NANOSECONDS),
@@ -184,24 +183,25 @@ public class SqlPerfAspect {
         );
     }
 
-    private String formatSlowestQueries(final List<SqlPerformanceContext.QueryExecution> queries, final TimeUnit targetUnit) {
+    private String formatSlowestQueries(final List<SqlPerfContext.QueryExecution> queries, final TimeUnit targetUnit) {
         if (queries.isEmpty()) {
             return "│ No queries executed";
         }
 
         String unitSymbol = getUnitSymbol(targetUnit);
 
-        return "│ Slowest Queries:\n" + queries.stream()
-                .sorted(Comparator.comparingLong(SqlPerformanceContext.QueryExecution::executionTimeNanos).reversed())
-                .limit(3)
-                .map(q -> {
-                    long time = targetUnit.convert(q.executionTimeNanos(), TimeUnit.NANOSECONDS);
-                    return String.format("│   - %d%s: %s",
-                            time,
-                            unitSymbol,
-                            truncate(q.sql(), 120));
-                })
-                .collect(Collectors.joining("\n"));
+        return "│ Slowest Queries:\n%s".formatted(
+                queries.stream()
+                        .sorted(Comparator.comparingLong(SqlPerfContext.QueryExecution::executionTimeNanos).reversed())
+                        .limit(3)
+                        .map(q -> {
+                            long time = targetUnit.convert(q.executionTimeNanos(), TimeUnit.NANOSECONDS);
+                            return String.format("│   - %d%s: %s",
+                                    time,
+                                    unitSymbol,
+                                    truncate(q.sql(), 120));
+                        })
+                        .collect(Collectors.joining("\n")));
     }
 
     private void recordMetrics(final PerformanceReport report, final TrackSqlPerf config) {
@@ -212,8 +212,8 @@ public class SqlPerfAspect {
         );
 
         // Add custom tags
-        for (String tag : config.metricTags()) {
-            String[] parts = tag.split("=");
+        for (final String tag : config.metricTags()) {
+            final String[] parts = tag.split("=");
             if (parts.length == 2) {
                 tags = tags.and(parts[0], parts[1]);
             }
@@ -270,25 +270,33 @@ public class SqlPerfAspect {
             return annotation.value();
         }
 
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        return signature.getDeclaringType().getSimpleName() + "." + signature.getName();
+        final MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        return "%s.%s".formatted(signature.getDeclaringType().getSimpleName(), signature.getName());
     }
 
     private Object[] sanitizeArgs(final Object[] args) {
         return Arrays.stream(args)
-                .map(arg -> {
-                    if (arg == null) return "null";
-                    if (arg instanceof String) return "String";
-                    if (arg instanceof Number) return arg.toString();
-                    if (arg instanceof LocalDate || arg instanceof LocalDateTime) return arg.toString();
-                    return arg.getClass().getSimpleName();
-                })
+                .map(this::sanitizeArg)
                 .toArray();
+    }
+
+    private String sanitizeArg(final Object arg) {
+        final String NULL_LITERAL = "null";
+        final String STRING_TYPE_LITERAL = "String";
+
+        return switch (arg) {
+            case null -> NULL_LITERAL;
+            case String _ -> STRING_TYPE_LITERAL;
+            case Number n -> n.toString();
+            case LocalDate d -> d.toString();
+            case LocalDateTime dt -> dt.toString();
+            default -> arg.getClass().getSimpleName();
+        };
     }
 
     private String truncate(final String str, final int maxLength) {
         return str.length() > maxLength
-                ? str.substring(0, maxLength) + "..."
+                ? "%s...".formatted(str.substring(0, maxLength))
                 : str;
     }
 }

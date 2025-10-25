@@ -7,13 +7,13 @@ import java.util.List;
 
 // Performance tracking context
 @Getter
-public class SqlPerformanceContext {
+public class SqlPerfContext {
     private final String operationName;
     private final long startTimeNanos;
     private final List<QueryExecution> queries = new ArrayList<>();
     private int queryCount = 0;
 
-    public SqlPerformanceContext(String operationName) {
+    public SqlPerfContext(String operationName) {
         this.operationName = operationName;
         this.startTimeNanos = System.nanoTime();
     }

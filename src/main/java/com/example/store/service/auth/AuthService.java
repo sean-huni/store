@@ -28,7 +28,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthRespDTO authenticate(final AuthReqDTO request) {
-        log.info("Authenticating user: {}", request.email());
+        log.info("🔐 Authenticating user: {}", request.email());
 
         try {
             // Authenticate using Spring's AuthenticationManager
@@ -47,7 +47,7 @@ public class AuthService {
             final String accessToken = jwtService.generateAccessToken(user);
             final String refreshToken = jwtService.generateRefreshToken(user);
 
-            log.info("User authenticated successfully: {}", user.getEmail());
+            log.info("🔐 User authenticated successfully: {}", user.getEmail());
 
             return AuthRespDTO.builder()
                     .accessToken(accessToken)

@@ -1,5 +1,7 @@
 package com.example.store.config.sqltracking;
 
+import com.example.store.aop.performance.context.SqlPerfContext;
+import com.example.store.aop.performance.context.SqlPerfContextHolder;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class SqlLoggingListener implements QueryExecutionListener {
     private final ThreadLocal<List<QueryInfo>> queryStack = ThreadLocal.withInitial(ArrayList::new);
     private final MeterRegistry meterRegistry;
+    private final SqlPerfContextHolder sqlPerfContextHolder;
 
     @Override
     public void beforeQuery(final ExecutionInfo execInfo, final List<QueryInfo> queryInfoList) {
@@ -29,6 +32,16 @@ public class SqlLoggingListener implements QueryExecutionListener {
     public void afterQuery(final ExecutionInfo execInfo, final List<QueryInfo> queryInfoList) {
         final long executionTime = execInfo.getElapsedTime();
         final int queryCount = queryInfoList.size();
+
+        // Record query execution times in SqlPerfContext for @TrackSqlPerf integration
+        final SqlPerfContext context = sqlPerfContextHolder.peek();
+        if (context != null) {
+            for (final QueryInfo queryInfo : queryInfoList) {
+                // Convert milliseconds to nanoseconds - execInfo.getElapsedTime() returns ms
+                long executionTimeNanos = TimeUnit.NANOSECONDS.convert(executionTime, TimeUnit.MILLISECONDS);
+                context.recordQuery(queryInfo.getQuery(), executionTimeNanos);
+            }
+        }
 
         for (final QueryInfo queryInfo : queryInfoList) {
             String query = queryInfo.getQuery();
@@ -46,7 +59,7 @@ public class SqlLoggingListener implements QueryExecutionListener {
                         execInfo.getConnectionId()
                 );
             } else if (log.isDebugEnabled()) {
-                log.debug("Query executed in {}ms: {}",
+                log.debug(" Query executed in {}ms: {}",
                         executionTime,
                         truncate(query, 100));
             }

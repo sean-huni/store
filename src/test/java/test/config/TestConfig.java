@@ -1,9 +1,10 @@
 package test.config;
 
 import com.example.store.aop.performance.SqlPerfAspect;
-import com.example.store.aop.performance.context.SqlPerformanceContext;
-import com.example.store.aop.performance.context.SqlPerformanceContextHolder;
+import com.example.store.aop.performance.context.SqlPerfContext;
+import com.example.store.aop.performance.context.SqlPerfContextHolder;
 import com.example.store.config.sqltracking.SqlLoggingListener;
+import com.example.store.config.sqltracking.SqlPerfTrackingProperties;
 import io.hypersistence.optimizer.HypersistenceOptimizer;
 import io.hypersistence.optimizer.core.config.JpaConfig;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -56,21 +57,21 @@ public class TestConfig {
     }
 
     @Bean
-    SqlPerformanceContextHolder sqlPerformanceContextHolder() {
-        return new SqlPerformanceContextHolder();
+    SqlPerfContextHolder sqlPerformanceContextHolder() {
+        return new SqlPerfContextHolder();
     }
 
     @Bean
-    com.example.store.config.sqltracking.SqlPerformanceTrackingProperties sqlPerformanceTrackingProperties() {
+    SqlPerfTrackingProperties sqlPerformanceTrackingProperties() {
         // Create test properties with default values
-        return new com.example.store.config.sqltracking.SqlPerformanceTrackingProperties();
+        return new SqlPerfTrackingProperties();
     }
 
     @Bean
     SqlPerfAspect enhancedSqlPerformanceAspect(
-            SqlPerformanceContextHolder contextHolder,
+            SqlPerfContextHolder contextHolder,
             MeterRegistry meterRegistry,
-            com.example.store.config.sqltracking.SqlPerformanceTrackingProperties properties) {
+            SqlPerfTrackingProperties properties) {
         return new SqlPerfAspect(contextHolder, meterRegistry, properties);
     }
 
@@ -80,14 +81,14 @@ public class TestConfig {
     }
 
     @Bean
-    SqlLoggingListener customQueryLoggingListener(final MeterRegistry meterRegistry) {
-        return new SqlLoggingListener(meterRegistry);
+    SqlLoggingListener customQueryLoggingListener(final MeterRegistry meterRegistry, final SqlPerfContextHolder contextHolder) {
+        return new SqlLoggingListener(meterRegistry, contextHolder);
     }
 
     @Bean
     BeanPostProcessor sqlPerformanceDataSourcePostProcessor(
-            SqlPerformanceContextHolder contextHolder,
-            SqlLoggingListener sqlLoggingListener) {
+            final SqlPerfContextHolder contextHolder,
+            final SqlLoggingListener sqlLoggingListener) {
         return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) {
@@ -97,25 +98,29 @@ public class TestConfig {
                             .name("SQL-Performance-Tracker-Test")
                             .listener(sqlLoggingListener)
                             .listener(new QueryExecutionListener() {
+
                                 @Override
-                                public void beforeQuery(ExecutionInfo executionInfo, List<QueryInfo> list) {
+                                public void beforeQuery(final ExecutionInfo executionInfo, final List<QueryInfo> list) {
                                     // Reduce logging overhead - only log in debug mode
                                     if (log.isDebugEnabled()) {
-                                        SqlPerformanceContext context = contextHolder.peek();
+                                        SqlPerfContext context = contextHolder.peek();
                                         String operationName = context != null ? context.getOperationName() : "Unknown";
-
-                                        log.debug("SQL Execution Starting - Operation: {} | Connection: {} | Queries: {}",
+//
+                                        log.debug(" SQL Execution Starting - Operation: {} | Connection: {} | Queries: {}",
                                                 operationName, executionInfo.getConnectionId(), list.size());
                                     }
                                 }
 
                                 @Override
-                                public void afterQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
+                                public void afterQuery(final ExecutionInfo execInfo, final List<QueryInfo> queryInfoList) {
                                     // Essential: Record query performance data
-                                    SqlPerformanceContext context = contextHolder.peek();
+                                    SqlPerfContext context = contextHolder.peek();
                                     if (context != null) {
                                         for (final QueryInfo queryInfo : queryInfoList) {
-                                            context.recordQuery(queryInfo.getQuery(), execInfo.getElapsedTime());
+                                            // Convert milliseconds to nanoseconds - execInfo.getElapsedTime() returns ms
+                                            long executionTimeNanos = java.util.concurrent.TimeUnit.NANOSECONDS.convert(
+                                                    execInfo.getElapsedTime(), java.util.concurrent.TimeUnit.MILLISECONDS);
+                                            context.recordQuery(queryInfo.getQuery(), executionTimeNanos);
                                         }
                                     }
                                 }
