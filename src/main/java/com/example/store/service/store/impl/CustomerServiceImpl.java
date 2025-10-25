@@ -47,6 +47,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CustomerDTO findCustomerById(final Long id) {
         final var optCustomer = customerRepo.findById(id);
         return optCustomer.map(customerMapper::toCustomerDTO).orElse(null);

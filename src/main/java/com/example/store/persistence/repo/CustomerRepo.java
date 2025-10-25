@@ -16,13 +16,13 @@ public interface CustomerRepo extends JpaRepository<Customer, Long> {
 
     @TrackSqlPerf(value = "findCustomersByNameContainingIgnoreCase",
             timeUnit = TimeUnit.MILLISECONDS,
-            warnThreshold = 160,
-            errorThreshold = 250,
+            warnThreshold = 100,
+            errorThreshold = 150,
             maxExpectedQueries = 1,
             critical = true,  // Mark as critical for production monitoring
             metricTags = {"service=store", "operation=search"}
     )
-    @Query("SELECT c FROM Customer c WHERE UPPER(c.name) LIKE UPPER(CONCAT('%', :name, '%')) ORDER BY c.name")
+    @Query("FROM Customer c WHERE UPPER(c.name) LIKE UPPER(CONCAT('%', :name, '%')) ORDER BY c.name")
     List<Customer> findCustomersByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
 
     Optional<Customer> findCustomerById(@Param("id") Long id);

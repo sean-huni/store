@@ -14,6 +14,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -26,6 +27,7 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerRepo customerRepo;
 
     @Cacheable(value = "orders", key = "'all_page_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public List<OrderDTO> findAllOrders(final Pageable pageable) {
         final Page<Order> orderPage = orderRepo.findAll(pageable);
         return orderMapper.ordersToOrderDTOs(orderPage.getContent());
@@ -41,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @CacheEvict(value = "orders", allEntries = true)
+    @Transactional
     public OrderDTO createOrder(final OrderDTO orderDTO) {
         // Check if customer exists
         final Customer customer = customerRepo.findById(orderDTO.getCustomerId())
