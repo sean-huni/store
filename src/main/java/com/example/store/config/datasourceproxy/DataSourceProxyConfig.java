@@ -1,4 +1,4 @@
-package com.example.store.config;
+package com.example.store.config.datasourceproxy;
 
 import com.example.store.config.sqltracking.SqlLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSource;

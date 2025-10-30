@@ -1,4 +1,4 @@
-package com.example.store.aop.performance;
+package com.example.store.aop.performance.dto;
 
 import com.example.store.aop.performance.context.SqlPerfContext;
 import lombok.Builder;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Builder
-record PerfReport(
+public record PerfReport(
         String operationName,
         long totalExecutionTime,
         long totalExecutionTimeNanos,
