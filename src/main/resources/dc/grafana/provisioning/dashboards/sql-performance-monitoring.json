@@ -121,7 +121,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(sql_performance_total_seconds{component=\"track-sql-perf\"}[5m]) * 1000",
+          "expr": "rate(sql_performance_total_seconds_sum{component=\"track-sql-perf\"}[5m]) * 1000",
           "interval": "",
           "legendFormat": "{{operation}} - {{status}}",
           "range": true,
@@ -328,7 +328,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(query_total{component=\"datasource-proxy\"}[5m])",
+          "expr": "rate(datasource_proxy_query_count_total{component=\"datasource-proxy\"}[5m])",
           "interval": "",
           "legendFormat": "Query Rate - {{type}}",
           "range": true,

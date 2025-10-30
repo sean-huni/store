@@ -1,4 +1,5 @@
 # ./prometheus.yml - Enhanced SQL Performance Monitoring with Categorized Metrics
+# FIXED VERSION - Corrected regex patterns to match underscore-based metric names
 global:
   scrape_interval: 5s
   evaluation_interval: 8s
@@ -19,9 +20,9 @@ scrape_configs:
     params:
       format: [ 'prometheus' ]
     metric_relabel_configs:
-      # Keep only sql.performance.* metrics for track-sql-perf category
+      # Keep only sql_performance_* metrics (FIXED: underscore not dot!)
       - source_labels: [ __name__ ]
-        regex: 'sql\.performance\..*'
+        regex: 'sql_performance_.*'
         action: keep
       # Add component label for Grafana categorization
       - target_label: component
@@ -65,7 +66,7 @@ scrape_configs:
     metric_relabel_configs:
       # Keep flexy-pool connection metrics
       - source_labels: [ __name__ ]
-        regex: '(flexy_pool_.*|connection_pool_.*|hikari_.*|data_source_.*)'
+        regex: '(flexy_pool_.*|connection_pool_.*|hikaricp_.*|data_source_.*)'
         action: keep
       # Add component label for Grafana categorization
       - target_label: component
@@ -111,9 +112,9 @@ scrape_configs:
     params:
       format: [ 'prometheus' ]
     metric_relabel_configs:
-      # Exclude SQL monitoring metrics (they're handled by specific jobs above)
+      # Exclude SQL monitoring metrics (FIXED: underscore not dot!)
       - source_labels: [ __name__ ]
-        regex: '(sql\.performance\..*|datasource_proxy_.*|connection_.*|query_.*|p6spy_.*|flexy_pool_.*|connection_pool_.*|hikari_.*|data_source_.*|hypersistence_.*|optimizer_.*)'
+        regex: '(sql_performance_.*|datasource_proxy_.*|connection_.*|query_.*|p6spy_.*|flexy_pool_.*|connection_pool_.*|hikaricp_.*|data_source_.*|hypersistence_.*|optimizer_.*)'
         action: drop
       # Add component label for general metrics
       - target_label: component

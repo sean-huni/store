@@ -7,6 +7,9 @@ server.compression:
 ---
 # Default monitoring - Essential endpoints for observability
 management:
+  metrics:
+    enable:
+      hikaricp: true
   endpoints:
     web:
       exposure:
@@ -51,6 +54,7 @@ spring:
         # Enforce strict lazy loading
         bytecode:
           use_reflection_optimizer: false
+        generate_statistics: true
     # Ensure lazy loading is default
     open-in-view: false
   liquibase:
@@ -60,6 +64,7 @@ spring:
     username: ${DB_USER:admin}
     password: ${DB_PASS:admin}
     hikari:
+      register-mbeans: true  # Enable HikariCP metrics
       auto-commit: false  # Disable auto-commit for optimal Hibernate performance
       connection-timeout: 2000
       minimum-idle: 5
@@ -77,6 +82,17 @@ customer:
     sort-field: name
     limit: 20
     sort-direction: asc
+
+# Flexy-Pool Configuration for HikariCP Metrics
+decorator:
+  datasource:
+    enabled: true
+    flexy-pool:
+      metrics:
+        reporter:
+          micrometer:
+            enabled: true
+            auto-start: true
 
 # application.yml
 sql-performance:

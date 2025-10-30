@@ -208,7 +208,8 @@ public class SqlPerfAspect {
         Tags tags = Tags.of(
                 "operation", report.operationName(),
                 "status", determineStatus(report, config),
-                "time_unit", config.timeUnit().name().toLowerCase()
+                "time_unit", config.timeUnit().name().toLowerCase(),
+                "component", "track-sql-perf"
         );
 
         // Add custom tags
