@@ -83,7 +83,7 @@ public class SqlPerfAspect {
         final long queryTime = targetUnit.convert(queryTimeNanos, TimeUnit.NANOSECONDS);
 
         // Build performance report
-        final var report = PerformanceReport.builder()
+        final var report = PerfReport.builder()
                 .operationName(context.getOperationName())
                 .totalExecutionTime(duration)
                 .totalExecutionTimeNanos(durationNanos)
@@ -146,7 +146,7 @@ public class SqlPerfAspect {
         recordMetrics(report, config);
     }
 
-    private String formatReport(final PerformanceReport report, final TrackSqlPerf config) {
+    private String formatReport(final PerfReport report, final TrackSqlPerf config) {
         String unitSymbol = getUnitSymbol(config.timeUnit());
 
         return String.format("""
@@ -204,7 +204,7 @@ public class SqlPerfAspect {
                         .collect(Collectors.joining("\n")));
     }
 
-    private void recordMetrics(final PerformanceReport report, final TrackSqlPerf config) {
+    private void recordMetrics(final PerfReport report, final TrackSqlPerf config) {
         Tags tags = Tags.of(
                 "operation", report.operationName(),
                 "status", determineStatus(report, config),
@@ -246,7 +246,7 @@ public class SqlPerfAspect {
         };
     }
 
-    private String determineStatus(final PerformanceReport report, final TrackSqlPerf config) {
+    private String determineStatus(final PerfReport report, final TrackSqlPerf config) {
         if (report.totalExecutionTime() >= config.errorThreshold() ||
                 report.queryCount() > config.maxExpectedQueries()) {
             return "error";

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Builder
-record PerformanceReport(
+record PerfReport(
         String operationName,
         long totalExecutionTime,
         long totalExecutionTimeNanos,
